@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE, authHeaders, clearSession } from "../utils/auth";
 import toast from "react-hot-toast";
+import iitgBg from "../assets/iitg_bg.png";
 
 const steps = ["Basic Info", "Home Address", "Education", "Documents", "Declaration"];
 
 const campusBgStyle = {
-  backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.58), rgba(17, 24, 39, 0.58)), url(${process.env.PUBLIC_URL}/iitg_bg.png)`,
+  backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.58), rgba(17, 24, 39, 0.58)), url(${iitgBg})`,
 };
 
 const EMPTY_EDITABLE = {

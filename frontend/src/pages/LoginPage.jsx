@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE, saveSession, getToken, getRole } from "../utils/auth";
+import iitgBg from "../assets/iitg_bg.png";
 
 export default function LoginPage() {
   const location = useLocation();
@@ -59,7 +60,7 @@ export default function LoginPage() {
   return (
     <div
       className="iitg-login-bg min-h-screen w-full flex items-center justify-center p-3 sm:p-4"
-      style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/iitg_bg.png)` }}
+      style={{ backgroundImage: `url(${iitgBg})` }}
     >
       <div className="iitg-role-card w-full max-w-[92vw] sm:max-w-md md:max-w-lg rounded-sm p-5 sm:p-7 md:p-8 text-slate-900">
         <div className="flex justify-center mb-3 sm:mb-4">

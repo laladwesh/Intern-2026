@@ -50,7 +50,7 @@ const stripNonEditable = (body) => {
 // @desc    Get own profile
 router.get("/profile", protect, studentOnly, async (req, res) => {
   try {
-    const student = await Student.findById(req.user.id).select("-password -__v");
+    const student = await Student.findById(req.user.id).select("-__v");
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -83,7 +83,7 @@ router.put(
         req.user.id,
         allowedUpdates,
         { new: true, runValidators: true }
-      ).select("-password -__v");
+      ).select("-__v");
 
       if (!student) {
         return res.status(404).json({ message: "Student not found" });
@@ -126,7 +126,7 @@ router.post(
 
       res.json({
         message: "Registration completed successfully",
-        student: await Student.findById(req.user.id).select("-password -__v"),
+        student: await Student.findById(req.user.id).select("-__v"),
       });
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
@@ -158,7 +158,7 @@ router.post(
           req.user.id,
           { profile_pic: imageFileName },
           { new: true }
-        ).select("-password -__v");
+        ).select("-__v");
 
         res.json({
           message: "Profile picture uploaded successfully",
@@ -221,7 +221,7 @@ router.post(
           req.user.id,
           updateData,
           { new: true }
-        ).select("-password -__v");
+        ).select("-__v");
 
         res.json({
           message: "CV(s) uploaded successfully",
@@ -255,7 +255,7 @@ router.put(
         req.user.id,
         updateData,
         { new: true, runValidators: true }
-      ).select("-password -__v");
+      ).select("-__v");
 
       if (!student) {
         return res.status(404).json({ message: "Student not found" });

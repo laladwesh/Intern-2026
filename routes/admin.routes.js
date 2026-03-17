@@ -40,7 +40,7 @@ router.get("/students", protect, adminOnly, async (req, res) => {
     }
 
     const students = await Student.find(filter)
-      .select("-password -__v")
+      .select("-__v")
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .sort({ roll_number: 1 });
@@ -63,7 +63,7 @@ router.get("/students", protect, adminOnly, async (req, res) => {
 router.get("/students/:id", protect, adminOnly, async (req, res) => {
   try {
     const student = await Student.findById(req.params.id).select(
-      "-password -__v"
+      "-__v"
     );
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
@@ -81,7 +81,7 @@ router.put("/students/:id", protect, adminOnly, async (req, res) => {
     const student = await Student.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    }).select("-password -__v");
+    }).select("-__v");
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });

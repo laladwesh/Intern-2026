@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 import validator from "validator";
 import "mongoose-type-url";
-import bcrypt from "bcryptjs";
 
 const studentSchema = new Schema(
   {
@@ -20,6 +19,11 @@ const studentSchema = new Schema(
       validate: validator.isEmail,
       required: true,
       unique: true,
+    },
+    outlook_id: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     major_cpi: {
       type: Number,
@@ -66,10 +70,6 @@ const studentSchema = new Schema(
     },
 
     // ===== EDITABLE FIELDS (student can update these) =====
-    password: {
-      type: String,
-      minlength: 6,
-    },
     alt_email: {
       type: String,
     },
@@ -235,23 +235,11 @@ const studentSchema = new Schema(
     },
     is_registered: {
       type: Boolean,
-      default: false, // becomes true after student signs up with password
+      default: false,
     },
   },
   { timestamps: true }
 );
-
-// Hash password before save
-studentSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
-
-// Compare password method
-studentSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
 
 const Student = mongoose.model("student", studentSchema);
 export default Student;

@@ -1,12 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
 import connectDB from "./config/db.js";
 
 // Route imports
+import authRoutes from "./routes/auth.routes.js";
 import adminAuthRoutes from "./routes/admin.auth.routes.js";
 import studentAuthRoutes from "./routes/student.auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -21,7 +21,8 @@ connectDB();
 const app = express();
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const APP_BASE_PATH = process.env.APP_BASE_PATH || "/intern-2026";
-const API_BASE_PATH = IS_PRODUCTION ? `${APP_BASE_PATH}/api` : "/api";
+const API_BASE_PATH = `${APP_BASE_PATH}/api`;
+const API_COMPAT_PATH = "/api";
 
 // Middleware
 app.use(cors({
@@ -30,7 +31,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 const sendUploadFile = (folderName) => {
   return (req, res) => {
@@ -51,14 +51,25 @@ const sendUploadFile = (folderName) => {
 
 app.get(`${API_BASE_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_BASE_PATH}/cv/:filename`, sendUploadFile("cvs"));
+app.get(`${API_COMPAT_PATH}/image/:filename`, sendUploadFile("profile_pics"));
+app.get(`${API_COMPAT_PATH}/cv/:filename`, sendUploadFile("cvs"));
 
 // Routes
+app.use(`${API_BASE_PATH}/auth`, authRoutes);
 app.use(`${API_BASE_PATH}/admin/auth`, adminAuthRoutes);
 app.use(`${API_BASE_PATH}/student/auth`, studentAuthRoutes);
 app.use(`${API_BASE_PATH}/admin`, adminRoutes);
 app.use(`${API_BASE_PATH}/student`, studentRoutes);
+app.use(`${API_COMPAT_PATH}/auth`, authRoutes);
+app.use(`${API_COMPAT_PATH}/admin/auth`, adminAuthRoutes);
+app.use(`${API_COMPAT_PATH}/student/auth`, studentAuthRoutes);
+app.use(`${API_COMPAT_PATH}/admin`, adminRoutes);
+app.use(`${API_COMPAT_PATH}/student`, studentRoutes);
 
 app.get(`${API_BASE_PATH}/health`, (req, res) => {
+  res.json({ message: "CCD Intern 2026 API is running" });
+});
+app.get(`${API_COMPAT_PATH}/health`, (req, res) => {
   res.json({ message: "CCD Intern 2026 API is running" });
 });
 
@@ -73,7 +84,7 @@ if (IS_PRODUCTION) {
     res.json({
       message: "Backend running in development mode",
       frontend: "http://localhost:3000",
-      api: "http://localhost:5000/api",
+      api: "http://localhost:5000/intern-2026/api",
     });
   });
 }

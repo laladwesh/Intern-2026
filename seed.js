@@ -19,7 +19,7 @@ const seedAdmin = async () => {
     // Create admin - change these to your details
     const admin = await Admin.create({
       name: "Admin",
-      email: "admin@iitg.ac.in", // CHANGE THIS to your Outlook email
+      email: "g.avinash@iitg.ac.in", // CHANGE THIS to your Outlook email
       role: "admin",
     });
 

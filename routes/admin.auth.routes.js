@@ -55,15 +55,8 @@ router.get("/callback", async (req, res) => {
 
     const token = generateToken(admin._id, admin.role);
 
-    // Set cookie and redirect to frontend
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    res.redirect(`${process.env.FRONTEND_URL}/admin/dashboard?token=${token}`);
+    const frontendBasePath = process.env.APP_BASE_PATH || "/intern-2026";
+    res.redirect(`${process.env.FRONTEND_URL}${frontendBasePath}/?token=${token}&role=admin`);
   } catch (error) {
     res.status(500).json({ message: "Outlook auth failed", error: error.message });
   }
@@ -86,7 +79,6 @@ router.get("/me", protect, adminOnly, async (req, res) => {
 // @route   POST /api/admin/auth/logout
 // @desc    Logout admin
 router.post("/logout", protect, adminOnly, (req, res) => {
-  res.cookie("token", "", { httpOnly: true, expires: new Date(0) });
   res.json({ message: "Logged out successfully" });
 });
 

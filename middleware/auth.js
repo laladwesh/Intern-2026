@@ -1,6 +1,4 @@
 import jwt from "jsonwebtoken";
-import Student from "../models/Student.model.js";
-import Admin from "../models/Admin.model.js";
 
 // Generate JWT token
 export const generateToken = (id, role) => {
@@ -14,16 +12,12 @@ export const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Check Authorization header
+    // Check Authorization header only (Bearer token)
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
-    }
-    // Check cookies
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
     }
 
     if (!token) {

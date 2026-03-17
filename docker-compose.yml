@@ -15,17 +15,19 @@ services:
       PORT: 5009
       APP_BASE_PATH: ""
       FRONTEND_URL: http://localhost:5009
-      MONGO_URI: mongodb://mongo:27017/intern2026
+      # Default: use MongoDB running on host machine (systemd mongod)
+      MONGO_URI: mongodb://host.docker.internal:27017/intern2026
     env_file:
       - .env
     volumes:
       - uploads_data:/app/uploads
-    depends_on:
-      - mongo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   mongo:
     image: mongo:7
     container_name: intern2026-mongo
+    profiles: ["with-mongo"]
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db

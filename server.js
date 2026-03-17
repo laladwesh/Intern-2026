@@ -106,7 +106,11 @@ if (IS_PRODUCTION) {
   const frontendBuildPath = path.join(process.cwd(), "frontend", "build");
   if (APP_BASE_PATH) {
     app.use(APP_BASE_PATH, express.static(frontendBuildPath));
-    app.get(`${APP_BASE_PATH}/*`, (req, res) => {
+
+    const escapedBasePath = APP_BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const basePathCatchAll = new RegExp(`^${escapedBasePath}(?!/api(?:/|$))(?:/.*)?$`);
+
+    app.get(basePathCatchAll, (req, res) => {
       res.sendFile(path.join(frontendBuildPath, "index.html"));
     });
   } else {

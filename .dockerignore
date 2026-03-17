@@ -1,0 +1,9 @@
+node_modules
+frontend/node_modules
+frontend/build
+.git
+.gitignore
+.vscode
+npm-debug.log
+*.md
+.env

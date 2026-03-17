@@ -1,7 +1,7 @@
 export const API_BASE =
   process.env.NODE_ENV !== "production"
     ? "http://localhost:5000/intern-2026/api"
-    : "/intern-2026/api";
+    : process.env.REACT_APP_API_BASE || "/api";
 
 export const getToken = () => localStorage.getItem("authToken");
 export const getRole = () => localStorage.getItem("authRole");

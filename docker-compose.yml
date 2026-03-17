@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_URL: /
+        REACT_APP_API_BASE: /api
+    container_name: intern2026-app
+    restart: unless-stopped
+    ports:
+      - "5009:5009"
+    environment:
+      NODE_ENV: production
+      PORT: 5009
+      APP_BASE_PATH: ""
+      FRONTEND_URL: http://localhost:5009
+      MONGO_URI: mongodb://mongo:27017/intern2026
+    env_file:
+      - .env
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    container_name: intern2026-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+  uploads_data:

@@ -20,13 +20,24 @@ connectDB();
 
 const app = express();
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-const APP_BASE_PATH = process.env.APP_BASE_PATH || "/intern-2026";
+const normalizeBasePath = (basePath) => {
+  if (!basePath || basePath === "/") return "";
+  let normalized = basePath.trim();
+  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+  if (normalized.endsWith("/")) normalized = normalized.slice(0, -1);
+  return normalized;
+};
+
+const APP_BASE_PATH = normalizeBasePath(process.env.APP_BASE_PATH || "/intern-2026");
 const API_BASE_PATH = `${APP_BASE_PATH}/api`;
 const API_COMPAT_PATH = "/api";
+const corsOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
+  : true;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: corsOrigins,
   credentials: true,
 }));
 app.use(express.json());
@@ -75,10 +86,17 @@ app.get(`${API_COMPAT_PATH}/health`, (req, res) => {
 
 if (IS_PRODUCTION) {
   const frontendBuildPath = path.join(process.cwd(), "frontend", "build");
-  app.use(APP_BASE_PATH, express.static(frontendBuildPath));
-  app.get(`${APP_BASE_PATH}/*`, (req, res) => {
-    res.sendFile(path.join(frontendBuildPath, "index.html"));
-  });
+  if (APP_BASE_PATH) {
+    app.use(APP_BASE_PATH, express.static(frontendBuildPath));
+    app.get(`${APP_BASE_PATH}/*`, (req, res) => {
+      res.sendFile(path.join(frontendBuildPath, "index.html"));
+    });
+  } else {
+    app.use(express.static(frontendBuildPath));
+    app.get(/^(?!\/api).*/, (req, res) => {
+      res.sendFile(path.join(frontendBuildPath, "index.html"));
+    });
+  }
 } else {
   app.get("/", (req, res) => {
     res.json({

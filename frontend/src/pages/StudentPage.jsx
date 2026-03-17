@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE, authHeaders } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+import { API_BASE, authHeaders, clearSession } from "../utils/auth";
+import toast from "react-hot-toast";
 
 const steps = ["Basic Info", "Home Address", "Education", "Documents", "Declaration"];
 
@@ -81,10 +83,21 @@ function ReadOnlyAcademics({ student }) {
   );
 }
 
-function WelcomeStep({ onStart }) {
+function WelcomeStep({ onStart, studentName, onLogout }) {
   return (
     <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
       <div className="glass-card w-full max-w-4xl rounded-2xl p-8 md:p-12 text-slate-900">
+        <div className="flex items-center justify-end gap-3 mb-4 text-sm">
+          <span className="text-slate-600">{studentName || "Student"}</span>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-md bg-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-300"
+          >
+            Logout
+          </button>
+        </div>
+
         <p className="text-right text-xs md:text-sm text-red-400 mb-8">
           Complete your profile before CV verification deadline
         </p>
@@ -117,17 +130,95 @@ function WelcomeStep({ onStart }) {
   );
 }
 
-function BasicInfoForm({ onBack }) {
-  const [student, setStudent] = useState(null);
+function SubmissionSuccessView({ canEdit, onReview, studentName, onLogout }) {
+  return (
+    <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
+      <div className="glass-card w-full max-w-3xl rounded-2xl p-8 text-slate-900">
+        <div className="flex items-center justify-end gap-3 mb-4 text-sm">
+          <span className="text-slate-600">{studentName || "Student"}</span>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-md bg-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-300"
+          >
+            Logout
+          </button>
+        </div>
+
+        <h2 className="text-3xl font-bold text-center">Details Submitted</h2>
+        <p className="mt-3 text-center text-lg">Thank you.</p>
+        <p className="mt-4 text-center text-sm text-slate-600">
+          {canEdit
+            ? "You can still review and edit details until the deadline."
+            : "Deadline has been passed. You can review details but cannot edit now."}
+        </p>
+
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={onReview}
+            className="rounded-md bg-[var(--brand)] px-6 py-2 text-white font-semibold"
+          >
+            Review Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitted, studentName, onLogout }) {
+  const [student, setStudent] = useState(initialProfile || null);
   const [form, setForm] = useState(EMPTY_EDITABLE);
-  const [loading, setLoading] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
+  const [loading, setLoading] = useState(!initialProfile);
+  const [canEdit, setCanEdit] = useState(typeof initialCanEdit === "boolean" ? initialCanEdit : true);
   const [status, setStatus] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [cvFile, setCvFile] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [acceptPolicy, setAcceptPolicy] = useState(false);
   const [acceptNoDisciplinary, setAcceptNoDisciplinary] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(initialSubmitted));
+
+  useEffect(() => {
+    if (initialProfile) {
+      const schooling = initialProfile.schooling || {};
+      const cv = initialProfile.cv || {};
+
+      setForm({
+        gender: initialProfile.gender || "",
+        dob: initialProfile.dob ? new Date(initialProfile.dob).toISOString().slice(0, 10) : "",
+        mobile_campus: initialProfile.mobile_campus || "",
+        mobile_campus_alt: initialProfile.mobile_campus_alt || "",
+        alt_email: initialProfile.alt_email || "",
+        nationality: initialProfile.nationality || "Indian",
+        linkedin_url: initialProfile.linkedin_url || "",
+        category: initialProfile.category || "",
+        hostel: initialProfile.hostel || "",
+        room_number: initialProfile.room_number || "",
+        flat_no: initialProfile.flat_no || "",
+        address: initialProfile.address || "",
+        city: initialProfile.city || "",
+        state: initialProfile.state || "",
+        pincode: initialProfile.pincode || "",
+        x_percentage: schooling.x_percentage ?? "",
+        x_pass_year: schooling.x_pass_year ?? "",
+        x_board: schooling.x_board || "",
+        x_exam_medium: schooling.x_exam_medium || "",
+        xii_percentage: schooling.xii_percentage ?? "",
+        xii_pass_year: schooling.xii_pass_year ?? "",
+        xii_exam_board: schooling.xii_exam_board || "",
+        xii_exam_medium: schooling.xii_exam_medium || "",
+        gap: schooling.gap ?? "",
+        reason_gap: schooling.reason_gap || "",
+        entrance_examination: initialProfile.entrance_examination || "",
+        rank_category: initialProfile.rank_category || "",
+        jee_ma_gate_rank: initialProfile.jee_ma_gate_rank ?? "",
+        portfolio_Link: cv.portfolio_Link || "",
+        drive_Link: cv.drive_Link || "",
+      });
+    }
+  }, [initialProfile]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -140,6 +231,7 @@ function BasicInfoForm({ onBack }) {
 
         setStudent(data.student);
         setCanEdit(Boolean(data.canEdit));
+        setSubmitted(Boolean(data.student.registration_complete));
 
         const schooling = data.student.schooling || {};
         const cv = data.student.cv || {};
@@ -184,7 +276,7 @@ function BasicInfoForm({ onBack }) {
     };
 
     loadProfile();
-  }, []);
+  }, [initialProfile]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -239,6 +331,7 @@ function BasicInfoForm({ onBack }) {
 
     setStudent(data.student);
     setStatus("Profile updated successfully.");
+    toast.success("Profile saved");
   };
 
   const uploadDocuments = async () => {
@@ -285,6 +378,16 @@ function BasicInfoForm({ onBack }) {
     setStatus("");
 
     try {
+      if (!canEdit) {
+        if (currentStep < 5) {
+          setCurrentStep((prev) => Math.min(prev + 1, 5));
+          return;
+        }
+        setStatus("Deadline has been passed. Cannot edit/submit now.");
+        toast.error("Deadline has been passed. Cannot submit now.");
+        return;
+      }
+
       if (currentStep <= 3) {
         await saveProfile();
         setCurrentStep((prev) => Math.min(prev + 1, 5));
@@ -295,6 +398,7 @@ function BasicInfoForm({ onBack }) {
         await saveProfile();
         await uploadDocuments();
         setStatus("Documents saved successfully.");
+        toast.success("Documents saved");
         setCurrentStep(5);
         return;
       }
@@ -314,9 +418,12 @@ function BasicInfoForm({ onBack }) {
         if (!res.ok) throw new Error(data.message || "Submission failed");
 
         setStatus("Profile submitted successfully.");
+        setSubmitted(true);
+        toast.success("Profile submitted successfully");
       }
     } catch (e) {
       setStatus(e.message || "Update failed");
+      toast.error(e.message || "Update failed");
     }
   };
 
@@ -336,9 +443,35 @@ function BasicInfoForm({ onBack }) {
     );
   }
 
+  if (submitted) {
+    return (
+      <SubmissionSuccessView
+        canEdit={canEdit}
+        studentName={student?.name || studentName}
+        onLogout={onLogout}
+        onReview={() => {
+          setSubmitted(false);
+          setCurrentStep(1);
+          setStatus(canEdit ? "Review mode enabled. You can edit before deadline." : "Deadline has been passed. Review only.");
+        }}
+      />
+    );
+  }
+
   return (
     <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
       <div className="glass-card w-full max-w-6xl rounded-2xl p-5 md:p-7 text-slate-900">
+        <div className="flex items-center justify-end gap-3 mb-4 text-sm">
+          <span className="text-slate-600">{student?.name || studentName || "Student"}</span>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-md bg-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-300"
+          >
+            Logout
+          </button>
+        </div>
+
         <div className="flex items-center justify-between mb-5">
           <button onClick={handleBack} className="text-[var(--brand)] font-semibold">&larr; Back</button>
           <p className="text-sm text-emerald-600">
@@ -594,8 +727,61 @@ function BasicInfoForm({ onBack }) {
 }
 
 export default function StudentPage() {
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
-  return started
-    ? <BasicInfoForm onBack={() => setStarted(false)} />
-    : <WelcomeStep onStart={() => setStarted(true)} />;
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialProfile, setInitialProfile] = useState(null);
+  const [initialCanEdit, setInitialCanEdit] = useState(true);
+  const [initialSubmitted, setInitialSubmitted] = useState(false);
+
+  useEffect(() => {
+    const preload = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/student/profile`, {
+          headers: authHeaders(),
+        });
+        const data = await res.json();
+        if (!res.ok) return;
+
+        setInitialProfile(data.student);
+        setInitialCanEdit(Boolean(data.canEdit));
+        const wasSubmitted = Boolean(data.student?.registration_complete);
+        setInitialSubmitted(wasSubmitted);
+
+        if (wasSubmitted) {
+          setStarted(true);
+        }
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    preload();
+  }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/", { replace: true });
+  };
+
+  if (initialLoading) {
+    return (
+      <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
+        <div className="glass-card w-full max-w-3xl rounded-2xl p-8 text-slate-900">Loading...</div>
+      </div>
+    );
+  }
+
+  return started ? (
+    <BasicInfoForm
+      onBack={() => setStarted(false)}
+      initialProfile={initialProfile}
+      initialCanEdit={initialCanEdit}
+      initialSubmitted={initialSubmitted}
+      studentName={initialProfile?.name}
+      onLogout={handleLogout}
+    />
+  ) : (
+    <WelcomeStep onStart={() => setStarted(true)} studentName={initialProfile?.name} onLogout={handleLogout} />
+  );
 }

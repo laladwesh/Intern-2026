@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { API_BASE, authHeaders, authHeadersFormData, clearSession } from "../utils/auth";
 import { useNavigate } from "react-router-dom";
-import { API_BASE, getToken, authHeaders, authHeadersFormData, clearSession } from "../utils/auth";
-
-const campusBgStyle = {
-  backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.58), rgba(17, 24, 39, 0.58)), url(${process.env.PUBLIC_URL}/iitg_bg.png)`,
-};
+import toast from "react-hot-toast";
 
 const EMPTY_STUDENT = {
   roll_number: "",
@@ -29,51 +26,134 @@ const EMPTY_STUDENT = {
   },
 };
 
+const EMPTY_DEADLINE = {
+  title: "CCD Profile Submission Deadline",
+  description: "Students can edit only before this deadline",
+  deadline_date: "",
+};
+
+function formatDate(date) {
+  if (!date) return "-";
+  return new Date(date).toLocaleString();
+}
+
+function ModalShell({ open, title, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+      <div className="w-full max-w-4xl rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-3">
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <button onClick={onClose} className="rounded border px-3 py-1 text-sm hover:bg-slate-50">Close</button>
+        </div>
+        <div className="max-h-[75vh] overflow-auto p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function CoordinatorPage() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [error, setError] = useState("");
+
+  const [activeMenu, setActiveMenu] = useState("home");
   const [search, setSearch] = useState("");
 
-  const [bulkFile, setBulkFile] = useState(null);
-  const [bulkStatus, setBulkStatus] = useState("");
+  const [stats, setStats] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
+  const [deadlines, setDeadlines] = useState([]);
+  const [deadlineForm, setDeadlineForm] = useState(EMPTY_DEADLINE);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addMode, setAddMode] = useState("manual");
   const [newStudent, setNewStudent] = useState(EMPTY_STUDENT);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [addSuccess, setAddSuccess] = useState("");
-  const [addError, setAddError] = useState("");
+  const [bulkFile, setBulkFile] = useState(null);
 
-  const fetchStudents = async (searchText = "") => {
-    setLoadingStudents(true);
-    setError("");
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showStudentDetails, setShowStudentDetails] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+
+  const visibleStudents = useMemo(() => {
+    if (!search.trim()) return students;
+    const q = search.trim().toLowerCase();
+    return students.filter((s) =>
+      [s.name, s.email, String(s.roll_number), s.programme, s.major]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [students, search]);
+
+  const fetchStats = async () => {
     try {
-      const query = new URLSearchParams({ limit: "500" });
-      if (searchText.trim()) query.set("search", searchText.trim());
+      const res = await fetch(`${API_BASE}/admin/stats`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load stats");
+      setStats(data);
+    } catch (err) {
+      toast.error(err.message || "Failed to load stats");
+    }
+  };
 
-      const res = await fetch(`${API_BASE}/admin/students?${query}`, {
-        headers: authHeaders(),
-      });
+  const fetchStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/students?limit=1000`, { headers: authHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to load students");
       setStudents(data.students || []);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || "Failed to load students");
     } finally {
       setLoadingStudents(false);
     }
   };
 
+  const fetchDeadlines = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/deadlines`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load deadlines");
+      setDeadlines(data || []);
+    } catch (err) {
+      toast.error(err.message || "Failed to load deadlines");
+    }
+  };
+
   useEffect(() => {
+    fetchStats();
     fetchStudents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchDeadlines();
   }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/", { replace: true });
+  };
+
+  const handleSetDeadline = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/admin/deadlines`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(deadlineForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to set deadline");
+      toast.success("Deadline set successfully");
+      setDeadlineForm((prev) => ({ ...prev, deadline_date: "" }));
+      fetchDeadlines();
+      fetchStats();
+    } catch (err) {
+      toast.error(err.message || "Failed to set deadline");
+    }
+  };
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
-    setAddError("");
-    setAddSuccess("");
-    setIsSubmitting(true);
+    setSaving(true);
     try {
       const payload = {
         ...newStudent,
@@ -97,19 +177,25 @@ export default function CoordinatorPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Could not add student");
 
-      setAddSuccess(`Student "${payload.name}" added successfully.`);
+      toast.success("Student added successfully");
       setNewStudent(EMPTY_STUDENT);
-      fetchStudents(search);
+      setShowAddModal(false);
+      fetchStudents();
+      fetchStats();
     } catch (err) {
-      setAddError(err.message);
+      toast.error(err.message || "Could not add student");
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
   const handleBulkUpload = async () => {
-    if (!bulkFile) { setBulkStatus("Select an Excel file first."); return; }
-    setBulkStatus("Uploading...");
+    if (!bulkFile) {
+      toast.error("Select an Excel file first");
+      return;
+    }
+
+    setSaving(true);
     try {
       const formData = new FormData();
       formData.append("file", bulkFile);
@@ -122,15 +208,15 @@ export default function CoordinatorPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Bulk upload failed");
 
-      const { success = 0, failed = 0, errors = [] } = data.results || {};
-      setBulkStatus(
-        `Done — ${success} added/updated, ${failed} failed.` +
-          (errors.length ? ` Errors: ${errors.map((e) => `Row ${e.row}: ${e.error}`).join("; ")}` : "")
-      );
+      toast.success(`Bulk upload done. Success: ${data.results?.success || 0}`);
       setBulkFile(null);
-      fetchStudents(search);
+      setShowAddModal(false);
+      fetchStudents();
+      fetchStats();
     } catch (err) {
-      setBulkStatus(err.message);
+      toast.error(err.message || "Bulk upload failed");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -150,301 +236,328 @@ export default function CoordinatorPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setBulkStatus(err.message);
+      toast.error(err.message || "Template download failed");
     }
   };
 
-  const handleLogout = () => {
-    clearSession();
-    navigate("/", { replace: true });
+  const openStudentDetails = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/students/${id}`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch student details");
+      setSelectedStudent(data);
+      setShowStudentDetails(true);
+    } catch (err) {
+      toast.error(err.message || "Failed to fetch student details");
+    }
   };
 
-  return (
-    <div className="campus-bg min-h-screen text-slate-900 p-4 md:p-8" style={campusBgStyle}>
-      <div className="mx-auto max-w-7xl space-y-6">
+  const toggleCvVerification = async (s) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/students/${s._id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ cv_verified: !s.cv_verified }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Update failed");
+      toast.success(`CV marked as ${data.student.cv_verified ? "Verified" : "De-Verified"}`);
+      fetchStudents();
+    } catch (err) {
+      toast.error(err.message || "Update failed");
+    }
+  };
 
-        {/* Header */}
-        <div className="glass-card rounded-2xl p-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Coordinator Panel</h1>
-            <p className="text-slate-600 text-sm mt-1">
-              Manage students, add individually, or bulk-upload via Excel.
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="rounded-md bg-red-600 hover:bg-red-500 text-white px-4 py-2 text-sm font-semibold"
-          >
-            Logout
-          </button>
+  const renderHome = () => {
+    return (
+      <div className="space-y-5">
+        <div className="rounded-lg bg-white p-5">
+          <h2 className="text-4xl font-bold text-slate-800">Announcements</h2>
+          <div className="mt-4 border-t pt-4 text-slate-600">There is no announcement available.</div>
         </div>
 
-        {/* Add Student + Bulk Upload */}
-        <div className="grid gap-6 lg:grid-cols-2">
-
-          {/* Add Student */}
-          <form
-            onSubmit={handleAddStudent}
-            className="glass-card rounded-2xl p-6 space-y-4"
-          >
-            <h2 className="text-xl font-semibold">Add New Student</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Roll Number"
-                value={newStudent.roll_number}
-                onChange={(e) => setNewStudent((p) => ({ ...p, roll_number: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Full Name"
-                value={newStudent.name}
-                onChange={(e) => setNewStudent((p) => ({ ...p, name: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm sm:col-span-2"
-                placeholder="Institute Email"
-                type="email"
-                value={newStudent.email}
-                onChange={(e) => setNewStudent((p) => ({ ...p, email: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Major (e.g. CSE)"
-                value={newStudent.major}
-                onChange={(e) => setNewStudent((p) => ({ ...p, major: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Minor (optional)"
-                value={newStudent.minor}
-                onChange={(e) => setNewStudent((p) => ({ ...p, minor: e.target.value }))}
-              />
-              <select
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                value={newStudent.programme}
-                onChange={(e) => setNewStudent((p) => ({ ...p, programme: e.target.value }))}
-                required
-              >
-                {["BTech","BDes","MTech","MDes","MSc","MA","PhD","Dual"].map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Major CPI (e.g. 8.5)"
-                type="number"
-                min="0"
-                max="10"
-                step="0.01"
-                value={newStudent.major_cpi}
-                onChange={(e) => setNewStudent((p) => ({ ...p, major_cpi: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Minor CPI (optional)"
-                type="number"
-                min="0"
-                max="10"
-                step="0.01"
-                value={newStudent.minor_cpi}
-                onChange={(e) => setNewStudent((p) => ({ ...p, minor_cpi: e.target.value }))}
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Year of Admission (e.g. 2022)"
-                type="number"
-                value={newStudent.year_of_admission}
-                onChange={(e) => setNewStudent((p) => ({ ...p, year_of_admission: e.target.value }))}
-                required
-              />
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Year of Minor Admission (optional)"
-                type="number"
-                value={newStudent.year_of_minor_admission}
-                onChange={(e) => setNewStudent((p) => ({ ...p, year_of_minor_admission: e.target.value }))}
-              />
-
-              {["spi_1", "spi_2", "spi_3", "spi_4", "spi_5", "spi_6", "spi_7", "spi_8"].map((spiKey) => (
-                <input
-                  key={spiKey}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                  placeholder={`${spiKey.toUpperCase()} (optional)`}
-                  value={newStudent.semester_wise_spi[spiKey]}
-                  onChange={(e) =>
-                    setNewStudent((p) => ({
-                      ...p,
-                      semester_wise_spi: {
-                        ...p.semester_wise_spi,
-                        [spiKey]: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              ))}
+        <div className="grid gap-4 xl:grid-cols-4 md:grid-cols-2">
+          <div className="rounded-lg bg-white p-5">
+            <p className="text-xl font-semibold text-slate-700">Jobs Approved</p>
+            <p className="mt-5 text-4xl font-bold text-green-700">0/0</p>
+          </div>
+          <div className="rounded-lg bg-white p-5">
+            <p className="text-xl font-semibold text-slate-700">Download</p>
+            <div className="mt-4 space-y-2 text-sm">
+              <button className="w-full rounded bg-slate-100 p-2 text-left">All Students' Data</button>
+              <button className="w-full rounded bg-slate-100 p-2 text-left">All Companies' Data</button>
+              <button className="w-full rounded bg-slate-100 p-2 text-left">All Jobs Data</button>
             </div>
-            {addError && <p className="text-sm text-red-400">{addError}</p>}
-            {addSuccess && <p className="text-sm text-emerald-400">{addSuccess}</p>}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-md bg-[var(--brand)] px-5 py-2 text-sm font-semibold disabled:opacity-60"
-            >
-              {isSubmitting ? "Adding..." : "Add Student"}
-            </button>
-          </form>
+          </div>
+          <div className="rounded-lg bg-white p-5">
+            <p className="text-xl font-semibold text-slate-700">Registered Students</p>
+            <p className="mt-5 text-5xl font-bold text-green-700">{stats?.totalStudents ?? 0}</p>
+          </div>
+          <div className="rounded-lg bg-white p-5">
+            <p className="text-xl font-semibold text-slate-700">Registered Companies</p>
+            <p className="mt-5 text-5xl font-bold text-green-700">0</p>
+          </div>
+        </div>
 
-          {/* Bulk Upload */}
-          <div className="glass-card rounded-2xl p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Bulk Upload via Excel</h2>
-            <p className="text-sm text-slate-600">
-              Upload <code>.xlsx</code> / <code>.xls</code> to insert or update students in bulk.
-            </p>
+        <div className="rounded-lg bg-white p-5">
+          <h3 className="text-xl font-semibold text-slate-800">Submission Deadline</h3>
+          <form onSubmit={handleSetDeadline} className="mt-3 grid gap-3 md:grid-cols-3">
             <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => { setBulkFile(e.target.files?.[0] || null); setBulkStatus(""); }}
-              className="block w-full text-sm text-slate-700
-                file:mr-4 file:rounded file:border-0
-                file:bg-slate-200 file:px-3 file:py-2 file:text-slate-900
-                file:cursor-pointer cursor-pointer"
+              className="rounded border border-slate-300 px-3 py-2"
+              value={deadlineForm.title}
+              onChange={(e) => setDeadlineForm((p) => ({ ...p, title: e.target.value }))}
+              placeholder="Title"
+              required
             />
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleBulkUpload}
-                className="rounded-md bg-[var(--brand)] px-5 py-2 text-sm font-semibold"
-              >
-                Upload Students
-              </button>
-              <button
-                type="button"
-                onClick={downloadTemplate}
-                className="rounded-md bg-slate-300 hover:bg-slate-200 px-5 py-2 text-sm font-semibold"
-              >
-                Download Template
-              </button>
+            <input
+              className="rounded border border-slate-300 px-3 py-2"
+              value={deadlineForm.description}
+              onChange={(e) => setDeadlineForm((p) => ({ ...p, description: e.target.value }))}
+              placeholder="Description"
+            />
+            <input
+              className="rounded border border-slate-300 px-3 py-2"
+              type="datetime-local"
+              value={deadlineForm.deadline_date}
+              onChange={(e) => setDeadlineForm((p) => ({ ...p, deadline_date: e.target.value }))}
+              required
+            />
+            <div className="md:col-span-3 flex justify-end">
+              <button className="rounded bg-blue-600 px-4 py-2 font-semibold text-white">Save Deadline</button>
             </div>
-            {bulkStatus && (
-              <p className={`text-sm ${bulkStatus.includes("failed") || bulkStatus.includes("Error") ? "text-red-400" : "text-emerald-400"}`}>
-                {bulkStatus}
-              </p>
+          </form>
+          <div className="mt-3 text-sm text-slate-700">
+            <p className="font-semibold">Recent Deadlines</p>
+            {deadlines.length === 0 ? (
+              <p className="mt-1">No deadlines set.</p>
+            ) : (
+              <ul className="mt-1 space-y-1">
+                {deadlines.slice(0, 4).map((d) => (
+                  <li key={d._id}>
+                    {d.title} - {formatDate(d.deadline_date)} {d.is_active ? "(active)" : ""}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
+      </div>
+    );
+  };
 
-        {/* Student Table */}
-        <div className="glass-card rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-xl font-semibold">
-              All Students{" "}
-              <span className="text-slate-500 text-base font-normal">({students.length})</span>
-            </h2>
-            <form
-              onSubmit={(e) => { e.preventDefault(); fetchStudents(search); }}
-              className="flex gap-2"
+  const renderStudents = () => {
+    return (
+      <div className="rounded-lg bg-white p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-3xl font-bold text-slate-800">Students</h2>
+          <div className="flex gap-2">
+            <input
+              className="rounded border border-slate-300 px-3 py-2"
+              placeholder="Search students"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="rounded bg-blue-600 px-4 py-2 font-semibold text-white"
             >
-              <input
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm min-w-[200px]"
-                placeholder="Search name / email / roll"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-slate-300 hover:bg-slate-200 px-4 py-2 text-sm font-semibold"
-              >
-                Search
-              </button>
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => { setSearch(""); fetchStudents(""); }}
-                  className="rounded-md bg-slate-200 px-3 py-2 text-sm"
-                >
-                  Clear
-                </button>
-              )}
-            </form>
-          </div>
-
-          {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
-
-          <div className="overflow-auto rounded-lg bg-white/70">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-200">
-                <tr className="text-slate-800">
-                  <th className="py-3 px-4 text-left font-semibold">#</th>
-                  <th className="py-3 px-4 text-left font-semibold">Roll</th>
-                  <th className="py-3 px-4 text-left font-semibold">Name</th>
-                  <th className="py-3 px-4 text-left font-semibold">Email</th>
-                  <th className="py-3 px-4 text-left font-semibold">Major</th>
-                  <th className="py-3 px-4 text-left font-semibold">Programme</th>
-                  <th className="py-3 px-4 text-left font-semibold">CPI</th>
-                  <th className="py-3 px-4 text-left font-semibold">Status</th>
-                  <th className="py-3 px-4 text-left font-semibold">Registered</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingStudents ? (
-                  <tr>
-                    <td className="py-6 px-4 text-slate-600" colSpan="9">
-                      Loading students...
-                    </td>
-                  </tr>
-                ) : students.length === 0 ? (
-                  <tr>
-                    <td className="py-6 px-4 text-slate-600" colSpan="9">
-                      No students found.
-                    </td>
-                  </tr>
-                ) : (
-                  students.map((s, idx) => (
-                    <tr
-                      key={s._id}
-                      className="border-t border-slate-200 hover:bg-slate-100 transition-colors"
-                    >
-                      <td className="py-2 px-4 text-slate-600">{idx + 1}</td>
-                      <td className="py-2 px-4">{s.roll_number || "-"}</td>
-                      <td className="py-2 px-4">{s.name || "-"}</td>
-                      <td className="py-2 px-4 text-slate-700">{s.email}</td>
-                      <td className="py-2 px-4">{s.major || "-"}</td>
-                      <td className="py-2 px-4">{s.programme || "-"}</td>
-                      <td className="py-2 px-4">{s.major_cpi ?? "-"}</td>
-                      <td className="py-2 px-4">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            s.status === "Placed_Student"
-                              ? "bg-emerald-900 text-emerald-300"
-                              : s.status === "Blocked"
-                              ? "bg-red-900 text-red-300"
-                              : "bg-slate-700 text-slate-300"
-                          }`}
-                        >
-                          {s.status || "-"}
-                        </span>
-                      </td>
-                      <td className="py-2 px-4">
-                        {s.is_registered ? (
-                          <span className="text-emerald-400">Yes</span>
-                        ) : (
-                          <span className="text-slate-500">No</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              New Student
+            </button>
           </div>
         </div>
+
+        <div className="overflow-auto">
+          <table className="min-w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-slate-100 text-lg text-slate-800">
+                <th className="p-3">ID</th>
+                <th className="p-3">Name of Student</th>
+                <th className="p-3">IITG Webmail</th>
+                <th className="p-3">Roll Number</th>
+                <th className="p-3">Programme</th>
+                <th className="p-3">Discipline</th>
+                <th className="p-3">CV</th>
+                <th className="p-3">View Details</th>
+                <th className="p-3">Drive Link</th>
+                <th className="p-3">Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingStudents ? (
+                <tr><td className="p-3" colSpan="10">Loading...</td></tr>
+              ) : visibleStudents.length === 0 ? (
+                <tr><td className="p-3" colSpan="10">No students found.</td></tr>
+              ) : (
+                visibleStudents.map((s, idx) => {
+                  const cvList = [s?.cv?.tech, s?.cv?.non_tech, s?.cv?.core].filter(Boolean);
+                  return (
+                    <tr key={s._id} className="border-t border-slate-200 odd:bg-white even:bg-slate-50">
+                      <td className="p-3">{idx + 1}</td>
+                      <td className="p-3">{s.name || "-"}</td>
+                      <td className="p-3">{s.email}</td>
+                      <td className="p-3">{s.roll_number || "-"}</td>
+                      <td className="p-3">{s.programme || "-"}</td>
+                      <td className="p-3">{s.major || "-"}</td>
+                      <td className="p-3">
+                        {cvList.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {cvList.map((_, i) => (
+                              <span key={i} className="rounded border border-blue-600 px-2 py-1 text-blue-700">CV {i + 1}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span>No CV</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => openStudentDetails(s._id)}
+                          className="text-blue-600 underline"
+                        >
+                          Details
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        {s?.cv?.drive_Link ? (
+                          <a href={s.cv.drive_Link} target="_blank" rel="noreferrer" className="text-blue-600 underline">Link</a>
+                        ) : (
+                          "0"
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleCvVerification(s)}
+                          className="rounded bg-blue-600 px-4 py-1.5 font-semibold text-white"
+                        >
+                          {s.cv_verified ? "De-Verify" : "Verify"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-200">
+      <div className="flex min-h-screen">
+        <aside className="w-[300px] border-r bg-white">
+          <div className="flex items-center gap-3 border-b px-4 py-5">
+            <img src={`${process.env.PUBLIC_URL}/iitg.png`} alt="IITG" className="h-14 w-14" />
+            <h1 className="text-[42px] font-semibold text-slate-900">Internship Portal</h1>
+          </div>
+
+          <nav className="px-3 py-4 text-[34px] text-slate-900">
+            {["Home", "Registered Companies", "Internships", "Students", "Master Data", "Programmes List", "Announcements"].map((item) => (
+              <button
+                type="button"
+                key={item}
+                onClick={() => item === "Home" ? setActiveMenu("home") : item === "Students" ? setActiveMenu("students") : null}
+                className={`mb-1 block w-full rounded px-3 py-2 text-left ${
+                  (activeMenu === "home" && item === "Home") || (activeMenu === "students" && item === "Students")
+                    ? "bg-slate-200 font-semibold"
+                    : "hover:bg-slate-100"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+
+          <div className="absolute bottom-4 px-4 text-xl text-slate-700">Technical Support Team, CCD, IITG</div>
+        </aside>
+
+        <main className="flex-1">
+          <header className="flex items-center justify-end border-b bg-white px-5 py-3">
+            <div className="mr-3 text-[28px] text-blue-700">iitg.tnp@gmail.com</div>
+            <button onClick={handleLogout} className="rounded bg-slate-200 px-3 py-1 text-lg hover:bg-slate-300">Logout</button>
+          </header>
+
+          <div className="p-4">{activeMenu === "home" ? renderHome() : renderStudents()}</div>
+        </main>
+      </div>
+
+      <ModalShell open={showAddModal} title="Add Student" onClose={() => setShowAddModal(false)}>
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setAddMode("manual")}
+            className={`rounded px-4 py-2 ${addMode === "manual" ? "bg-blue-600 text-white" : "bg-slate-100"}`}
+          >
+            Manual Single Upload
+          </button>
+          <button
+            type="button"
+            onClick={() => setAddMode("bulk")}
+            className={`rounded px-4 py-2 ${addMode === "bulk" ? "bg-blue-600 text-white" : "bg-slate-100"}`}
+          >
+            Bulk Upload
+          </button>
+        </div>
+
+        {addMode === "manual" ? (
+          <form onSubmit={handleAddStudent} className="grid gap-3 sm:grid-cols-2">
+            <input className="rounded border border-slate-300 px-3 py-2" placeholder="Roll Number" value={newStudent.roll_number} onChange={(e) => setNewStudent((p) => ({ ...p, roll_number: e.target.value }))} required />
+            <input className="rounded border border-slate-300 px-3 py-2" placeholder="Name" value={newStudent.name} onChange={(e) => setNewStudent((p) => ({ ...p, name: e.target.value }))} required />
+            <input className="rounded border border-slate-300 px-3 py-2 sm:col-span-2" placeholder="Email" value={newStudent.email} onChange={(e) => setNewStudent((p) => ({ ...p, email: e.target.value }))} required />
+            <input className="rounded border border-slate-300 px-3 py-2" placeholder="Major" value={newStudent.major} onChange={(e) => setNewStudent((p) => ({ ...p, major: e.target.value }))} required />
+            <select className="rounded border border-slate-300 px-3 py-2" value={newStudent.programme} onChange={(e) => setNewStudent((p) => ({ ...p, programme: e.target.value }))}>
+              {["BTech", "BDes", "MTech", "MDes", "MSc", "MA", "PhD", "Dual"].map((p) => <option key={p}>{p}</option>)}
+            </select>
+            <input className="rounded border border-slate-300 px-3 py-2" placeholder="Major CPI" value={newStudent.major_cpi} onChange={(e) => setNewStudent((p) => ({ ...p, major_cpi: e.target.value }))} required />
+            <input className="rounded border border-slate-300 px-3 py-2" placeholder="Year of Admission" value={newStudent.year_of_admission} onChange={(e) => setNewStudent((p) => ({ ...p, year_of_admission: e.target.value }))} required />
+
+            <div className="sm:col-span-2 mt-2 flex justify-end">
+              <button type="submit" disabled={saving} className="rounded bg-blue-600 px-4 py-2 font-semibold text-white">
+                {saving ? "Saving..." : "Add Student"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+              className="block w-full rounded border border-slate-300 p-2"
+            />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={downloadTemplate} className="rounded bg-slate-200 px-4 py-2 font-semibold">Download Template</button>
+              <button type="button" onClick={handleBulkUpload} disabled={saving} className="rounded bg-blue-600 px-4 py-2 font-semibold text-white">
+                {saving ? "Uploading..." : "Upload"}
+              </button>
+            </div>
+          </div>
+        )}
+      </ModalShell>
+
+      <ModalShell open={showStudentDetails} title="Student Details" onClose={() => setShowStudentDetails(false)}>
+        {selectedStudent ? (
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <div><span className="font-semibold">Name:</span> {selectedStudent.name || "-"}</div>
+            <div><span className="font-semibold">Email:</span> {selectedStudent.email || "-"}</div>
+            <div><span className="font-semibold">Roll Number:</span> {selectedStudent.roll_number || "-"}</div>
+            <div><span className="font-semibold">Programme:</span> {selectedStudent.programme || "-"}</div>
+            <div><span className="font-semibold">Major:</span> {selectedStudent.major || "-"}</div>
+            <div><span className="font-semibold">Minor:</span> {selectedStudent.minor || "-"}</div>
+            <div><span className="font-semibold">Major CPI:</span> {selectedStudent.major_cpi ?? "-"}</div>
+            <div><span className="font-semibold">Minor CPI:</span> {selectedStudent.minor_cpi ?? "-"}</div>
+            <div><span className="font-semibold">Hostel:</span> {selectedStudent.hostel || "-"}</div>
+            <div><span className="font-semibold">Room Number:</span> {selectedStudent.room_number || "-"}</div>
+            <div className="sm:col-span-2"><span className="font-semibold">Home Address:</span> {selectedStudent.address || "-"}</div>
+          </div>
+        ) : (
+          <p>No details available.</p>
+        )}
+      </ModalShell>
     </div>
   );
 }

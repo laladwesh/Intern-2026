@@ -319,10 +319,13 @@ router.post("/deadlines", protect, adminOnly, async (req, res) => {
         .json({ message: "Title and deadline date are required" });
     }
 
+    await Deadline.updateMany({ is_active: true }, { $set: { is_active: false } });
+
     const deadline = await Deadline.create({
       title,
       description,
       deadline_date,
+      is_active: true,
       created_by: req.user.id,
     });
 

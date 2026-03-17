@@ -84,6 +84,24 @@ app.get(`${API_COMPAT_PATH}/health`, (req, res) => {
   res.json({ message: "CCD Intern 2026 API is running" });
 });
 
+app.get(`${API_BASE_PATH}/test`, (req, res) => {
+  res.json({
+    ok: true,
+    message: "Test API route is working",
+    path: `${API_BASE_PATH}/test`,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get(`${API_COMPAT_PATH}/test`, (req, res) => {
+  res.json({
+    ok: true,
+    message: "Test API route is working",
+    path: `${API_COMPAT_PATH}/test`,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 if (IS_PRODUCTION) {
   const frontendBuildPath = path.join(process.cwd(), "frontend", "build");
   if (APP_BASE_PATH) {

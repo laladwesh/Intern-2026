@@ -519,8 +519,8 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
   }
 
   return (
-    <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
-      <div className="glass-card w-full max-w-6xl rounded-2xl p-5 md:p-7 text-slate-900">
+    <div className="campus-bg min-h-screen w-full flex items-center justify-center p-2 sm:p-3 md:p-4" style={campusBgStyle}>
+      <div className="glass-card w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl rounded-2xl p-4 md:p-6 text-slate-900 max-h-[calc(100vh-1rem)] md:max-h-[88vh] overflow-y-auto overflow-x-hidden hide-scrollbar">
         <div className="flex items-center justify-end gap-3 mb-4 text-sm">
           <span className="text-slate-600">{student?.name || studentName || "Student"}</span>
           <button
@@ -539,7 +539,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           </p>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-3">
           <p className="text-slate-500 text-sm">Step {currentStep} of 5</p>
           <h2 className="text-2xl font-semibold">{steps[currentStep - 1]}</h2>
           <p className="text-xs text-slate-500 mt-1">Institute-record fields are visible but non-editable.</p>
@@ -571,6 +571,11 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
                 <option value="SC">SC</option>
                 <option value="ST">ST</option>
                 <option value="Gen-EWS">Gen-EWS</option>
+                <option value="General-PwD">General-PwD</option>
+                <option value="SC-PwD">SC-PwD</option>
+                <option value="ST-PwD">ST-PwD</option>
+                <option value="OBC-PwD">OBC-PwD</option>
+                <option value="EWS-PwD">EWS-PwD</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
@@ -774,7 +779,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           </p>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-5 flex justify-end gap-3">
           <button
             type="button"
             onClick={handleNext}

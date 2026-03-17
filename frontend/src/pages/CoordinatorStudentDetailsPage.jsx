@@ -96,10 +96,10 @@ export default function CoordinatorStudentDetailsPage() {
   return (
     <div className="min-h-screen bg-slate-200">
       <div className="flex min-h-screen">
-        <aside className="w-64 border-r bg-white">
+        <aside className="w-80 border-r bg-white">
           <div className="flex items-center gap-3 border-b px-4 py-5">
             <img src={`${process.env.PUBLIC_URL}/iitg.png`} alt="IITG" className="h-14 w-14" />
-            <h1 className="text-2xl font-semibold text-slate-900">Internship Portal</h1>
+            <h1 className="whitespace-nowrap text-2xl font-semibold text-slate-900">Internship Portal</h1>
           </div>
 
           <nav className="px-3 py-4 text-base text-slate-900">

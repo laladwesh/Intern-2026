@@ -50,3 +50,14 @@ body {
   border: 1px solid #cfd3da;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16);
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}

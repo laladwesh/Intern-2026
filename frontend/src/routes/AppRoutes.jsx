@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import CoordinatorPage from "../pages/CoordinatorPage";
+import CoordinatorStudentDetailsPage from "../pages/CoordinatorStudentDetailsPage";
 import StudentPage from "../pages/StudentPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -14,6 +15,15 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute role="admin">
             <CoordinatorPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/coordinator/students/:id"
+        element={
+          <ProtectedRoute role="admin">
+            <CoordinatorStudentDetailsPage />
           </ProtectedRoute>
         }
       />

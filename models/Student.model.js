@@ -213,11 +213,11 @@ const studentSchema = new Schema(
     status: {
       type: String,
       enum: {
-        values: ["Placed_Student", "Sitting_Placement", "Blocked"],
+        values: ["Placed_Student", "Sitting_Intern", "Blocked"],
         message: "{VALUE} is not supported in status field",
       },
       required: true,
-      default: "Sitting_Placement",
+      default: "Sitting_Intern",
     },
     backlogs: {
       type: Number,

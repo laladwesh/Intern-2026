@@ -308,10 +308,11 @@ router.get(
 // ==================== DEADLINE MANAGEMENT ====================
 
 // @route   POST /api/admin/deadlines
-// @desc    Create a new deadline
+// @desc    Create or update the single active deadline
 router.post("/deadlines", protect, adminOnly, async (req, res) => {
   try {
     const { title, description, deadline_date } = req.body;
+    const createdBy = req.user?.id || req.user?._id;
 
     if (!title || !deadline_date) {
       return res
@@ -319,14 +320,36 @@ router.post("/deadlines", protect, adminOnly, async (req, res) => {
         .json({ message: "Title and deadline date are required" });
     }
 
-    await Deadline.updateMany({ is_active: true }, { $set: { is_active: false } });
+    if (!createdBy) {
+      return res.status(401).json({ message: "Invalid auth payload for admin user" });
+    }
+
+    const parsedDeadline = new Date(deadline_date);
+    if (Number.isNaN(parsedDeadline.getTime())) {
+      return res.status(400).json({ message: "Invalid deadline date format" });
+    }
+
+    const existingActiveDeadline = await Deadline.findOne({ is_active: true });
+
+    if (existingActiveDeadline) {
+      existingActiveDeadline.title = title;
+      existingActiveDeadline.description = description;
+      existingActiveDeadline.deadline_date = parsedDeadline;
+      existingActiveDeadline.created_by = createdBy;
+      await existingActiveDeadline.save();
+
+      return res.json({
+        message: "Deadline updated",
+        deadline: existingActiveDeadline,
+      });
+    }
 
     const deadline = await Deadline.create({
       title,
       description,
-      deadline_date,
+      deadline_date: parsedDeadline,
       is_active: true,
-      created_by: req.user.id,
+      created_by: createdBy,
     });
 
     res.status(201).json({ message: "Deadline created", deadline });

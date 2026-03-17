@@ -45,6 +45,58 @@ const EMPTY_EDITABLE = {
 const toNumberOrUndefined = (value) =>
   value === "" || value === null || value === undefined ? undefined : Number(value);
 
+const toUploadUrl = (type, value) => {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_BASE}/${type}/${encodeURIComponent(value)}`;
+};
+
+function UploadedDocumentsView({ student }) {
+  const profilePicUrl = toUploadUrl("image", student?.profile_pic);
+  const cvTechUrl = toUploadUrl("cv", student?.cv?.tech);
+  const cvNonTechUrl = toUploadUrl("cv", student?.cv?.non_tech);
+  const cvCoreUrl = toUploadUrl("cv", student?.cv?.core);
+  const driveLink = student?.cv?.drive_Link || "";
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h3 className="text-lg font-semibold mb-3">Uploaded Documents</h3>
+
+      <div className="grid md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="font-medium mb-2">Profile Photo</p>
+          {profilePicUrl ? (
+            <a href={profilePicUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+              View Uploaded Photo
+            </a>
+          ) : (
+            <p className="text-slate-500">No photo uploaded</p>
+          )}
+        </div>
+
+        <div>
+          <p className="font-medium mb-2">Uploaded CVs</p>
+          <div className="space-y-1">
+            {cvTechUrl ? <a href={cvTechUrl} target="_blank" rel="noreferrer" className="block text-blue-600 underline">Tech CV</a> : null}
+            {cvNonTechUrl ? <a href={cvNonTechUrl} target="_blank" rel="noreferrer" className="block text-blue-600 underline">Non-Tech CV</a> : null}
+            {cvCoreUrl ? <a href={cvCoreUrl} target="_blank" rel="noreferrer" className="block text-blue-600 underline">Core CV</a> : null}
+            {!cvTechUrl && !cvNonTechUrl && !cvCoreUrl ? <p className="text-slate-500">No CV uploaded</p> : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-sm">
+        <span className="font-medium">Drive Link: </span>
+        {driveLink ? (
+          <a href={driveLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">Open Drive Link</a>
+        ) : (
+          <span className="text-slate-500">Not provided</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ReadOnlyAcademics({ student }) {
   const spiEntries = useMemo(
     () => Object.entries(student?.semester_wise_spi || {}).filter(([, v]) => v),
@@ -130,7 +182,7 @@ function WelcomeStep({ onStart, studentName, onLogout }) {
   );
 }
 
-function SubmissionSuccessView({ canEdit, onReview, studentName, onLogout }) {
+function SubmissionSuccessView({ canEdit, onReview, studentName, onLogout, student }) {
   return (
     <div className="campus-bg min-h-screen w-full flex items-center justify-center p-4" style={campusBgStyle}>
       <div className="glass-card w-full max-w-3xl rounded-2xl p-8 text-slate-900">
@@ -161,6 +213,10 @@ function SubmissionSuccessView({ canEdit, onReview, studentName, onLogout }) {
           >
             Review Details
           </button>
+        </div>
+
+        <div className="mt-6">
+          <UploadedDocumentsView student={student} />
         </div>
       </div>
     </div>
@@ -347,6 +403,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
       });
       const cvResp = await cvRes.json();
       if (!cvRes.ok) throw new Error(cvResp.message || "CV upload failed");
+      if (cvResp.student) setStudent(cvResp.student);
     }
 
     if (photoFile) {
@@ -359,6 +416,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
       });
       const photoResp = await photoRes.json();
       if (!photoRes.ok) throw new Error(photoResp.message || "Photo upload failed");
+      if (photoResp.student) setStudent(photoResp.student);
     }
 
     const linksRes = await fetch(`${API_BASE}/student/cv-links`, {
@@ -372,6 +430,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
 
     const linksResp = await linksRes.json();
     if (!linksRes.ok) throw new Error(linksResp.message || "Link save failed");
+    if (linksResp.student) setStudent(linksResp.student);
   };
 
   const handleNext = async () => {
@@ -449,6 +508,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
         canEdit={canEdit}
         studentName={student?.name || studentName}
         onLogout={onLogout}
+        student={student}
         onReview={() => {
           setSubmitted(false);
           setCurrentStep(1);
@@ -628,6 +688,8 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
 
         {currentStep === 4 && (
           <div className="grid gap-4 text-sm">
+            <UploadedDocumentsView student={student} />
+
             <label className="flex flex-col gap-1">
               <span>Upload CV (PDF)</span>
               <input

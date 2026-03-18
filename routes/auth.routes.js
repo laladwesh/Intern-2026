@@ -6,6 +6,27 @@ import { getAuthUrl, acquireTokenByCode } from "../config/msal.js";
 
 const router = express.Router();
 
+const buildFrontendRedirectUrl = (token, role) => {
+  const frontendUrl = (process.env.FRONTEND_URL || "").trim() || "http://localhost:3000";
+  const appBasePath = (process.env.APP_BASE_PATH || "/intern-2026").trim() || "/intern-2026";
+
+  const normalizedFrontend = frontendUrl.replace(/\/+$/, "");
+  const normalizedBasePath = `/${appBasePath.replace(/^\/+|\/+$/g, "")}`;
+  const frontendLower = normalizedFrontend.toLowerCase();
+  const baseLower = normalizedBasePath.toLowerCase();
+
+  const hasBasePath =
+    frontendLower === baseLower ||
+    frontendLower.endsWith(baseLower) ||
+    frontendLower.endsWith(`${baseLower}/`);
+
+  const redirectBase = hasBasePath
+    ? normalizedFrontend
+    : `${normalizedFrontend}${normalizedBasePath}`;
+
+  return `${redirectBase}/?token=${encodeURIComponent(token)}&role=${encodeURIComponent(role)}`;
+};
+
 // @route   GET /api/auth/outlook/login
 // @desc    Unified Outlook login for admin and student
 router.get("/outlook/login", async (req, res) => {
@@ -37,8 +58,6 @@ router.get("/outlook/callback", async (req, res) => {
     const name = account.name || email;
     const outlookId = account.homeAccountId;
 
-    const frontendBasePath = process.env.APP_BASE_PATH || "/intern-2026";
-
     // 1) Check admin first
     const admin = await Admin.findOne({ email });
     if (admin) {
@@ -50,9 +69,7 @@ router.get("/outlook/callback", async (req, res) => {
 
       const token = generateToken(admin._id, "admin");
 
-      return res.redirect(
-        `${process.env.FRONTEND_URL}${frontendBasePath}/?token=${token}&role=admin`
-      );
+      return res.redirect(buildFrontendRedirectUrl(token, "admin"));
     }
 
     // 2) Check student
@@ -68,9 +85,7 @@ router.get("/outlook/callback", async (req, res) => {
 
       const token = generateToken(student._id, "student");
 
-      return res.redirect(
-        `${process.env.FRONTEND_URL}${frontendBasePath}/?token=${token}&role=student`
-      );
+      return res.redirect(buildFrontendRedirectUrl(token, "student"));
     }
 
     return res.status(403).json({

@@ -5,6 +5,27 @@ import { getAuthUrl, acquireTokenByCode } from "../config/msal.js";
 
 const router = express.Router();
 
+const buildFrontendRedirectUrl = (token, role) => {
+  const frontendUrl = (process.env.FRONTEND_URL || "").trim() || "http://localhost:3000";
+  const appBasePath = (process.env.APP_BASE_PATH || "/intern-2026").trim() || "/intern-2026";
+
+  const normalizedFrontend = frontendUrl.replace(/\/+$/, "");
+  const normalizedBasePath = `/${appBasePath.replace(/^\/+|\/+$/g, "")}`;
+  const frontendLower = normalizedFrontend.toLowerCase();
+  const baseLower = normalizedBasePath.toLowerCase();
+
+  const hasBasePath =
+    frontendLower === baseLower ||
+    frontendLower.endsWith(baseLower) ||
+    frontendLower.endsWith(`${baseLower}/`);
+
+  const redirectBase = hasBasePath
+    ? normalizedFrontend
+    : `${normalizedFrontend}${normalizedBasePath}`;
+
+  return `${redirectBase}/?token=${encodeURIComponent(token)}&role=${encodeURIComponent(role)}`;
+};
+
 // @route   GET /api/admin/auth/login
 // @desc    Redirect to Microsoft Outlook login
 router.get("/login", async (req, res) => {
@@ -55,8 +76,7 @@ router.get("/callback", async (req, res) => {
 
     const token = generateToken(admin._id, admin.role);
 
-    const frontendBasePath = process.env.APP_BASE_PATH || "/intern-2026";
-    res.redirect(`${process.env.FRONTEND_URL}${frontendBasePath}/?token=${token}&role=admin`);
+    res.redirect(buildFrontendRedirectUrl(token, "admin"));
   } catch (error) {
     res.status(500).json({ message: "Outlook auth failed", error: error.message });
   }

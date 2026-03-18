@@ -682,12 +682,29 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
               <input className="rounded border border-slate-300 px-3 py-2" value={form.reason_gap} onChange={(e) => updateField("reason_gap", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
-              <span>Rank Category</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.rank_category} onChange={(e) => updateField("rank_category", e.target.value)} disabled={!canEdit} />
+              <span>Examination Category</span>
+              <select
+                className="rounded border border-slate-300 px-3 py-2 bg-white"
+                value={form.rank_category}
+                onChange={(e) => updateField("rank_category", e.target.value)}
+                disabled={!canEdit}
+              >
+                <option value="">Select</option>
+                <option value="General">General</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+                <option value="Gen-EWS">Gen-EWS</option>
+                <option value="OBC-NCL">OBC-NCL</option>
+                <option value="General-PwD">General-PwD</option>
+                <option value="SC-PwD">SC-PwD</option>
+                <option value="ST-PwD">ST-PwD</option>
+                <option value="OBC-PwD">OBC-PwD</option>
+                <option value="EWS-PwD">EWS-PwD</option>
+              </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span>Examination Category Rank</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
+              <span>Category Rank</span>
+              <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
             </label>
           </div>
         )}

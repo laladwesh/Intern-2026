@@ -9,7 +9,7 @@ const seedAdmin = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
 
-    // Check if admin already exists
+    // multiple admins can exist
     const existing = await Admin.findOne({ role: "admin" });
     if (existing) {
       console.log("Admin already exists:", existing.email);

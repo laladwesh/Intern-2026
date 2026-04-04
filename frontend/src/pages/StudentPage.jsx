@@ -6,6 +6,22 @@ import iitgBg from "../assets/iitg_bg.png";
 
 const steps = ["Basic Info", "Home Address", "Education", "Documents", "Declaration"];
 
+const IITG_HOSTELS = [
+  "Kameng",
+  "Barak",
+  "Disang",
+  "Umiam",
+  "Gaurang",
+  "Manas",
+  "Subhansiri",
+  "Brahmaputra",
+  "Dihing",
+  "Siang",
+  "Lohit",
+  "Kapili",
+  "Dhansiri",
+];
+
 const campusBgStyle = {
   backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.58), rgba(17, 24, 39, 0.58)), url(${iitgBg})`,
 };
@@ -21,7 +37,6 @@ const EMPTY_EDITABLE = {
   category: "",
   hostel: "",
   room_number: "",
-  flat_no: "",
   address: "",
   city: "",
   state: "",
@@ -39,6 +54,7 @@ const EMPTY_EDITABLE = {
   entrance_examination: "",
   rank_category: "",
   jee_ma_gate_rank: "",
+  jee_advanced_rank: "",
   portfolio_Link: "",
   drive_Link: "",
 };
@@ -253,7 +269,6 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
         category: initialProfile.category || "",
         hostel: initialProfile.hostel || "",
         room_number: initialProfile.room_number || "",
-        flat_no: initialProfile.flat_no || "",
         address: initialProfile.address || "",
         city: initialProfile.city || "",
         state: initialProfile.state || "",
@@ -271,6 +286,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
         entrance_examination: initialProfile.entrance_examination || "",
         rank_category: initialProfile.rank_category || "",
         jee_ma_gate_rank: initialProfile.jee_ma_gate_rank ?? "",
+        jee_advanced_rank: initialProfile.jee_advanced_rank ?? "",
         portfolio_Link: cv.portfolio_Link || "",
         drive_Link: cv.drive_Link || "",
       });
@@ -304,7 +320,6 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           category: data.student.category || "",
           hostel: data.student.hostel || "",
           room_number: data.student.room_number || "",
-          flat_no: data.student.flat_no || "",
           address: data.student.address || "",
           city: data.student.city || "",
           state: data.student.state || "",
@@ -322,6 +337,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           entrance_examination: data.student.entrance_examination || "",
           rank_category: data.student.rank_category || "",
           jee_ma_gate_rank: data.student.jee_ma_gate_rank ?? "",
+          jee_advanced_rank: data.student.jee_advanced_rank ?? "",
           portfolio_Link: cv.portfolio_Link || "",
           drive_Link: cv.drive_Link || "",
         });
@@ -353,7 +369,6 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
       category: form.category || undefined,
       hostel: form.hostel || undefined,
       room_number: form.room_number || undefined,
-      flat_no: form.flat_no || undefined,
       address: form.address || undefined,
       city: form.city || undefined,
       state: form.state || undefined,
@@ -373,6 +388,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
       entrance_examination: form.entrance_examination || undefined,
       rank_category: form.rank_category || undefined,
       jee_ma_gate_rank: toNumberOrUndefined(form.jee_ma_gate_rank),
+      jee_advanced_rank: toNumberOrUndefined(form.jee_advanced_rank),
     };
 
     const res = await fetch(`${API_BASE}/student/profile`, {
@@ -606,17 +622,18 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           <div className="grid md:grid-cols-3 gap-3 text-sm">
             <label className="flex flex-col gap-1">
               <span>Hostel (Current Address)</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.hostel} onChange={(e) => updateField("hostel", e.target.value)} disabled={!canEdit} />
+              <select className="rounded border border-slate-300 px-3 py-2 bg-white" value={form.hostel} onChange={(e) => updateField("hostel", e.target.value)} disabled={!canEdit}>
+                <option value="">Select Hostel</option>
+                {IITG_HOSTELS.map((hostel) => (
+                  <option key={hostel} value={hostel}>{hostel}</option>
+                ))}
+              </select>
             </label>
             <label className="flex flex-col gap-1">
               <span>Room Number (Current Address)</span>
               <input className="rounded border border-slate-300 px-3 py-2" value={form.room_number} onChange={(e) => updateField("room_number", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
-              <span>Flat No. (Home Address)</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.flat_no} onChange={(e) => updateField("flat_no", e.target.value)} disabled={!canEdit} />
-            </label>
-            <label className="flex flex-col gap-1 md:col-span-3">
               <span>Home Address</span>
               <input className="rounded border border-slate-300 px-3 py-2" value={form.address} onChange={(e) => updateField("address", e.target.value)} disabled={!canEdit} />
             </label>
@@ -626,11 +643,16 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
             </label>
             <label className="flex flex-col gap-1">
               <span>State</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.state} onChange={(e) => updateField("state", e.target.value)} disabled={!canEdit} />
+              <select className="rounded border border-slate-300 px-3 py-2 bg-white" value={form.state} onChange={(e) => updateField("state", e.target.value)} disabled={!canEdit}>
+                <option value="">Select State</option>
+                {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </label>
             <label className="flex flex-col gap-1">
               <span>Pincode</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.pincode} onChange={(e) => updateField("pincode", e.target.value)} disabled={!canEdit} />
+              <input type="number" className="rounded border border-slate-300 px-3 py-2" value={form.pincode} onChange={(e) => { if (e.target.value.length <= 6) updateField("pincode", e.target.value); }} disabled={!canEdit} />
             </label>
           </div>
         )}
@@ -639,19 +661,19 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           <div className="grid md:grid-cols-2 gap-3 text-sm">
             <label className="flex flex-col gap-1">
               <span>Class 10th Percentage</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.x_percentage} onChange={(e) => updateField("x_percentage", e.target.value)} disabled={!canEdit} />
+              <input type="number" className="rounded border border-slate-300 px-3 py-2" value={form.x_percentage} onChange={(e) => updateField("x_percentage", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
               <span>Class 12th Percentage</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.xii_percentage} onChange={(e) => updateField("xii_percentage", e.target.value)} disabled={!canEdit} />
+              <input type="number" className="rounded border border-slate-300 px-3 py-2" value={form.xii_percentage} onChange={(e) => updateField("xii_percentage", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
               <span>Class 10th Pass Year</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.x_pass_year} onChange={(e) => updateField("x_pass_year", e.target.value)} disabled={!canEdit} />
+              <input type="number" className="rounded border border-slate-300 px-3 py-2" value={form.x_pass_year} onChange={(e) => updateField("x_pass_year", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
               <span>Class 12th Pass Year</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.xii_pass_year} onChange={(e) => updateField("xii_pass_year", e.target.value)} disabled={!canEdit} />
+              <input type="number" className="rounded border border-slate-300 px-3 py-2" value={form.xii_pass_year} onChange={(e) => updateField("xii_pass_year", e.target.value)} disabled={!canEdit} />
             </label>
             <label className="flex flex-col gap-1">
               <span>Class 10th Board</span>
@@ -669,17 +691,24 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
               <span>Class 12th Medium</span>
               <input className="rounded border border-slate-300 px-3 py-2" value={form.xii_exam_medium} onChange={(e) => updateField("xii_exam_medium", e.target.value)} disabled={!canEdit} />
             </label>
+            {/* Gap in Study + Reason for Gap — same row */}
             <label className="flex flex-col gap-1">
               <span>Gap in Study (years)</span>
               <input className="rounded border border-slate-300 px-3 py-2" value={form.gap} onChange={(e) => updateField("gap", e.target.value)} disabled={!canEdit} />
             </label>
-            <label className="flex flex-col gap-1 md:col-span-1">
-              <span>Entrance Exam</span>
-              <input className="rounded border border-slate-300 px-3 py-2" value={form.entrance_examination} onChange={(e) => updateField("entrance_examination", e.target.value)} disabled={!canEdit} />
-            </label>
-            <label className="flex flex-col gap-1 md:col-span-2">
+            <label className="flex flex-col gap-1">
               <span>Reason for Gap in Study</span>
               <input className="rounded border border-slate-300 px-3 py-2" value={form.reason_gap} onChange={(e) => updateField("reason_gap", e.target.value)} disabled={!canEdit} />
+            </label>
+            {/* Entrance Exam (read-only) + Examination Category — same row */}
+            <label className="flex flex-col gap-1">
+              <span>Entrance Exam</span>
+              <input
+                className="rounded border border-slate-300 px-3 py-2 bg-slate-50 text-slate-500 cursor-not-allowed"
+                value={student?.programme === "BDes" ? "UCEED" : "JEE Advanced"}
+                readOnly
+                disabled
+              />
             </label>
             <label className="flex flex-col gap-1">
               <span>Examination Category</span>
@@ -702,10 +731,24 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
                 <option value="EWS-PwD">EWS-PwD</option>
               </select>
             </label>
-            <label className="flex flex-col gap-1">
-              <span>Category Rank</span>
-              <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
-            </label>
+            {/* Ranks — same row */}
+            {student?.programme === "BTech" ? (
+              <>
+                <label className="flex flex-col gap-1">
+                  <span>JEE Mains Rank</span>
+                  <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span>JEE Advanced Rank</span>
+                  <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_advanced_rank} onChange={(e) => updateField("jee_advanced_rank", e.target.value)} disabled={!canEdit} />
+                </label>
+              </>
+            ) : (
+              <label className="flex flex-col gap-1">
+                <span>Category Rank</span>
+                <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
+              </label>
+            )}
           </div>
         )}
 

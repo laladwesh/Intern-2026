@@ -187,6 +187,10 @@ const studentSchema = new Schema(
       type: Number,
       required: false,
     },
+    jee_advanced_rank: {
+      type: Number,
+      required: false,
+    },
     rank_category: {
       type: String,
       required: false,

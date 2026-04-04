@@ -10,25 +10,31 @@ services:
     restart: unless-stopped
     ports:
       - "5009:5009"
+    depends_on:
+      mongo:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 5009
       APP_BASE_PATH: /intern-2026
       FRONTEND_URL: https://iitg.ac.in/intern-2026
-      # Default: use MongoDB running on host machine (systemd mongod)
-      MONGO_URI: mongodb://host.docker.internal:27017/intern2026
+      # Use internal Docker DNS service name for MongoDB
+      MONGO_URI: mongodb://mongo:27017/intern2026
     env_file:
       - .env
     volumes:
       - uploads_data:/app/uploads
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   mongo:
     image: mongo:7
     container_name: intern2026-mongo
-    profiles: ["with-mongo"]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
     volumes:
       - mongo_data:/data/db
 

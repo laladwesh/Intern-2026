@@ -8,21 +8,18 @@ services:
         REACT_APP_API_BASE: /intern-2026/api
     container_name: intern2026-app
     restart: unless-stopped
-    ports:
-      - "5009:5009"
+    network_mode: host
     environment:
       NODE_ENV: production
       PORT: 5009
       APP_BASE_PATH: /intern-2026
       FRONTEND_URL: https://iitg.ac.in/intern-2026
       # Use MongoDB running on host machine (systemd mongod)
-      MONGO_URI: mongodb://host.docker.internal:27017/intern2026
+      MONGO_URI: mongodb://127.0.0.1:27017/intern2026
     env_file:
       - .env
     volumes:
       - uploads_data:/app/uploads
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   mongo:
     image: mongo:7

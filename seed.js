@@ -4,22 +4,30 @@ import Admin from "./models/Admin.model.js";
 
 dotenv.config();
 
+const SEED_ADMIN_NAME = "John Jose";
+const SEED_ADMIN_EMAIL = "johnjose@iitg.ac.in";
+
 const seedAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
 
-    // multiple admins can exist
-    const existing = await Admin.findOne({ role: "admin" });
+    const adminEmail = SEED_ADMIN_EMAIL.trim();
+    if (!adminEmail) {
+      throw new Error("SEED_ADMIN_EMAIL is missing. Set it in your .env file.");
+    }
+
+    // Multiple admins are allowed. Skip only if this email already exists.
+    const existing = await Admin.findOne({ email: adminEmail });
     if (existing) {
       console.log("Admin already exists:", existing.email);
       process.exit(0);
     }
 
-    // Create admin - change these to your details
+    // Create admin using configurable values from environment variables.
     const admin = await Admin.create({
-      name: "Admin",
-      email: "g.avinash@iitg.ac.in", // CHANGE THIS to your Outlook email
+      name: SEED_ADMIN_NAME,
+      email: adminEmail,
       role: "admin",
     });
 

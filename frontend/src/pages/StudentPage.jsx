@@ -775,6 +775,9 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
                 disabled={!canEdit}
                 className="rounded border border-slate-300 px-3 py-2 bg-white"
               />
+              <p className="text-xs text-slate-500">
+                Please ensure that the photo you upload is in a 4:5 aspect ratio (400 × 500 px).
+              </p>
             </label>
             <label className="flex flex-col gap-1">
               <span>Portfolio/Website/GitHub Link</span>

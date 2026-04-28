@@ -14,6 +14,13 @@ export default function LoginPage() {
     const query = new URLSearchParams(location.search);
     const tokenFromUrl = query.get("token");
     const roleFromUrl = query.get("role");
+    const errorFromUrl = query.get("error");
+
+    if (errorFromUrl) {
+      setError(errorFromUrl);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
 
     if (tokenFromUrl && roleFromUrl) {
       saveSession(tokenFromUrl, roleFromUrl);

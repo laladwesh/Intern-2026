@@ -5,6 +5,8 @@ import { generateToken, protect } from "../middleware/auth.js";
 import { getAuthUrl, acquireTokenByCode } from "../config/msal.js";
 
 const router = express.Router();
+const BLOCKED_STUDENT_MESSAGE =
+  "You've been blocked from Intern 2026. Please contact ccd_queries and ccd.techsupport if this is wrong.";
 
 const buildFrontendRedirectUrl = (token, role) => {
   const frontendUrl = (process.env.FRONTEND_URL || "").trim() || "http://localhost:3000";
@@ -25,6 +27,27 @@ const buildFrontendRedirectUrl = (token, role) => {
     : `${normalizedFrontend}${normalizedBasePath}`;
 
   return `${redirectBase}/?token=${encodeURIComponent(token)}&role=${encodeURIComponent(role)}`;
+};
+
+const buildFrontendErrorRedirectUrl = (message) => {
+  const frontendUrl = (process.env.FRONTEND_URL || "").trim() || "http://localhost:3000";
+  const appBasePath = (process.env.APP_BASE_PATH || "/intern-2026").trim() || "/intern-2026";
+
+  const normalizedFrontend = frontendUrl.replace(/\/+$/, "");
+  const normalizedBasePath = `/${appBasePath.replace(/^\/+|\/+$/g, "")}`;
+  const frontendLower = normalizedFrontend.toLowerCase();
+  const baseLower = normalizedBasePath.toLowerCase();
+
+  const hasBasePath =
+    frontendLower === baseLower ||
+    frontendLower.endsWith(baseLower) ||
+    frontendLower.endsWith(`${baseLower}/`);
+
+  const redirectBase = hasBasePath
+    ? normalizedFrontend
+    : `${normalizedFrontend}${normalizedBasePath}`;
+
+  return `${redirectBase}/?error=${encodeURIComponent(message)}`;
 };
 
 // @route   GET /api/auth/outlook/login
@@ -75,6 +98,10 @@ router.get("/outlook/callback", async (req, res) => {
     // 2) Check student
     const student = await Student.findOne({ email });
     if (student) {
+      if (student.status === "Blocked") {
+        return res.redirect(buildFrontendErrorRedirectUrl(BLOCKED_STUDENT_MESSAGE));
+      }
+
       if (!student.outlook_id) {
         student.outlook_id = outlookId;
       }
@@ -109,6 +136,9 @@ router.get("/me", protect, async (req, res) => {
     if (req.user.role === "student") {
       const student = await Student.findById(req.user.id).select("-__v");
       if (!student) return res.status(404).json({ message: "Student not found" });
+      if (student.status === "Blocked") {
+        return res.status(403).json({ message: BLOCKED_STUDENT_MESSAGE });
+      }
       return res.json({ role: "student", user: student });
     }
 

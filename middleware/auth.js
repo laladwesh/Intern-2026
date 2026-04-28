@@ -1,4 +1,8 @@
 import jwt from "jsonwebtoken";
+import Student from "../models/Student.model.js";
+
+const BLOCKED_STUDENT_MESSAGE =
+  "You've been blocked from Intern 2026. Please contact ccd_queries and ccd.techsupport if this is wrong.";
 
 // Generate JWT token
 export const generateToken = (id, role) => {
@@ -43,11 +47,26 @@ export const adminOnly = (req, res, next) => {
 
 // Student only middleware
 export const studentOnly = (req, res, next) => {
-  if (req.user && req.user.role === "student") {
-    next();
-  } else {
+  if (!req.user || req.user.role !== "student") {
     return res.status(403).json({ message: "Access denied. Student only." });
   }
+
+  Student.findById(req.user.id)
+    .select("status")
+    .then((student) => {
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      if (student.status === "Blocked") {
+        return res.status(403).json({ message: BLOCKED_STUDENT_MESSAGE });
+      }
+
+      return next();
+    })
+    .catch(() => {
+      return res.status(500).json({ message: "Server error" });
+    });
 };
 
 // Check if deadline has passed (student can only edit before deadline)

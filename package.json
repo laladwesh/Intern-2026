@@ -18,6 +18,8 @@
   "description": "",
   "dependencies": {
     "@azure/msal-node": "^5.1.0",
+    "archiver": "^7.0.1",
+    "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -29,8 +31,11 @@
     "mongoose-type-url": "^2.1.0",
     "msal-node": "^0.0.1-security",
     "multer": "^2.1.1",
+    "node-schedule": "^2.1.1",
     "passport": "^0.7.0",
     "passport-microsoft": "^2.1.0",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.34.5",
     "validator": "^13.15.26",
     "xlsx": "^0.18.5"
   },

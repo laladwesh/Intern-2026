@@ -11,12 +11,19 @@ import adminAuthRoutes from "./routes/admin.auth.routes.js";
 import studentAuthRoutes from "./routes/student.auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
+import shareRoutes from "./routes/share.routes.js";
+
+// Utilities
+import { startCleanupService } from "./utils/cleanupService.js";
 
 // Load env vars
 dotenv.config();
 
 // Connect to MongoDB
 connectDB();
+
+// Start cleanup service for shared files
+startCleanupService();
 
 const app = express();
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
@@ -62,8 +69,10 @@ const sendUploadFile = (folderName) => {
 
 app.get(`${API_BASE_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_BASE_PATH}/cv/:filename`, sendUploadFile("cvs"));
+app.get(`${API_BASE_PATH}/shared/:filename`, sendUploadFile("shared-files"));
 app.get(`${API_COMPAT_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_COMPAT_PATH}/cv/:filename`, sendUploadFile("cvs"));
+app.get(`${API_COMPAT_PATH}/shared/:filename`, sendUploadFile("shared-files"));
 
 // Routes
 app.use(`${API_BASE_PATH}/auth`, authRoutes);
@@ -71,11 +80,13 @@ app.use(`${API_BASE_PATH}/admin/auth`, adminAuthRoutes);
 app.use(`${API_BASE_PATH}/student/auth`, studentAuthRoutes);
 app.use(`${API_BASE_PATH}/admin`, adminRoutes);
 app.use(`${API_BASE_PATH}/student`, studentRoutes);
+app.use(`${API_BASE_PATH}/share`, shareRoutes);
 app.use(`${API_COMPAT_PATH}/auth`, authRoutes);
 app.use(`${API_COMPAT_PATH}/admin/auth`, adminAuthRoutes);
 app.use(`${API_COMPAT_PATH}/student/auth`, studentAuthRoutes);
 app.use(`${API_COMPAT_PATH}/admin`, adminRoutes);
 app.use(`${API_COMPAT_PATH}/student`, studentRoutes);
+app.use(`${API_COMPAT_PATH}/share`, shareRoutes);
 
 app.get(`${API_BASE_PATH}/health`, (req, res) => {
   res.json({ message: "CCD Intern 2026 API is running" });

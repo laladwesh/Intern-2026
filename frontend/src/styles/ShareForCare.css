@@ -1,0 +1,514 @@
+/* Share for Care Styles */
+
+.share-login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 20px;
+}
+
+.share-login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 100%;
+}
+
+.share-login-box h1 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 28px;
+}
+
+.share-login-box p {
+  margin: 0 0 30px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.share-login-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.share-login-box input {
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.share-login-box input:focus {
+  outline: none;
+  border-color: #4a5568;
+}
+
+.share-login-box button {
+  padding: 12px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.share-login-box button:hover {
+  background: #2d3748;
+}
+
+/* Main Container */
+.share-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.share-header {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.share-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.logout-btn {
+  padding: 8px 20px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+/* Tabs */
+.share-tabs {
+  display: flex;
+  background: white;
+  padding: 0 30px;
+  gap: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.share-tabs button {
+  padding: 15px 25px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.share-tabs button:hover {
+  color: #4a5568;
+}
+
+.share-tabs button.active {
+  color: #4a5568;
+  border-bottom-color: #4a5568;
+}
+
+/* Content */
+.share-content {
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Upload Section */
+.upload-section h2,
+.section-group h2 {
+  margin: 0 0 25px 0;
+  color: #333;
+}
+
+.upload-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.upload-box {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.upload-box h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.upload-box input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.upload-box input[type="file"]:hover {
+  border-color: #4a5568;
+}
+
+.upload-box p {
+  margin: 15px 0 0 0;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Tools Section */
+.tools-section h2 {
+  margin: 0 0 25px 0;
+  color: #333;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.tool-box {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.tool-box h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.tool-box input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tool-box p {
+  margin: 12px 0 0 0;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Excel Section */
+.excel-section h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+}
+
+.excel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.excel-controls button {
+  padding: 10px 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.excel-controls button:hover {
+  background: #2d3748;
+}
+
+.excel-grid {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+}
+
+.excel-grid table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 600px;
+}
+
+.excel-grid td {
+  padding: 2px;
+  border: 1px solid #ddd;
+}
+
+.excel-grid input {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.excel-grid input:focus {
+  outline: 2px solid #4a5568;
+  background: #f7fafc;
+}
+
+/* Files Section */
+.files-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4a5568;
+}
+
+.filter-select {
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.files-controls button {
+  padding: 10px 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.files-controls button:hover {
+  background: #2d3748;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-files {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+.file-item {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.file-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.file-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+}
+
+.file-meta .expires {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.file-meta .permanent {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.file-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.copy-btn,
+.download-btn,
+.delete-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.copy-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.copy-btn:hover {
+  background: #1976d2;
+}
+
+.download-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.download-btn:hover {
+  background: #45a049;
+}
+
+.delete-btn {
+  background: #f44336;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #d32f2f;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  background: white;
+  padding: 30px 50px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Upload & Tools Combined Section */
+.upload-tools-section {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.section-group h2 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 22px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .share-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .share-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .file-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .copy-btn,
+  .download-btn,
+  .delete-btn {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .excel-controls {
+    flex-direction: column;
+  }
+
+  .excel-controls button {
+    width: 100%;
+  }
+}

@@ -67,9 +67,45 @@ const sendUploadFile = (folderName) => {
   };
 };
 
+const sendSharedFile = async (req, res, next) => {
+  try {
+    const { key } = req.params;
+    const isSafeKey = /^[A-Za-z0-9._-]+$/.test(key);
+    if (!isSafeKey) {
+      return res.status(400).json({ message: "Invalid file name" });
+    }
+
+    const sharedFile = await SharedFile.findOne({ shareUrl: key });
+    if (sharedFile) {
+      if (!sharedFile.isPermanent && new Date() > new Date(sharedFile.expiresAt)) {
+        return res.status(410).json({ message: "File has expired" });
+      }
+
+      const sharedFilePath = path.join(process.cwd(), "uploads", "shared-files", sharedFile.fileName);
+      if (!fs.existsSync(sharedFilePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      sharedFile.downloadCount += 1;
+      await sharedFile.save();
+
+      return res.sendFile(sharedFilePath);
+    }
+
+    const filePath = path.join(process.cwd(), "uploads", "shared-files", key);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    return res.sendFile(filePath);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 app.get(`${API_BASE_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_BASE_PATH}/cv/:filename`, sendUploadFile("cvs"));
-app.get(`${API_BASE_PATH}/shared/:filename`, sendUploadFile("shared-files"));
+app.get(`${API_BASE_PATH}/shared/:key`, sendSharedFile);
 app.get(`${API_COMPAT_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_COMPAT_PATH}/cv/:filename`, sendUploadFile("cvs"));
 app.get(`${API_COMPAT_PATH}/shared/:filename`, sendUploadFile("shared-files"));

@@ -178,7 +178,7 @@ export default function ShareForCarePage() {
   };
 
   const handleCopyLink = (shareUrl) => {
-    const fullUrl = `https://iitg.ac.in/intern-2026/${shareUrl}`;
+    const fullUrl = `https://iitg.ac.in/intern-2026/api/shared/${shareUrl}`;
     navigator.clipboard.writeText(fullUrl).then(
       () => {
         toast.success("Link copied to clipboard!");

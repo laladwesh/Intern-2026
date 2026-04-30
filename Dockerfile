@@ -22,6 +22,7 @@ RUN npm ci --omit=dev
 COPY config ./config
 COPY middleware ./middleware
 COPY models ./models
+COPY utils ./utils
 COPY routes ./routes
 COPY server.js ./server.js
 COPY seed.js ./seed.js

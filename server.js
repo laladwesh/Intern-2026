@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import connectDB from "./config/db.js";
+import SharedFile from "./models/SharedFile.model.js";
 
 // Route imports
 import authRoutes from "./routes/auth.routes.js";

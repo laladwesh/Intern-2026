@@ -23,7 +23,6 @@ dotenv.config();
 // Connect to MongoDB
 connectDB();
 
-// Start cleanup service for shared files
 startCleanupService();
 
 const app = express();

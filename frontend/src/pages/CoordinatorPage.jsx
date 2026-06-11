@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { API_BASE, authHeaders, authHeadersFormData, clearSession } from "../utils/auth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import CoordinatorPgPage from "./CoordinatorPgPage";
 
 const EMPTY_STUDENT = {
   roll_number: "",
@@ -498,18 +499,20 @@ export default function CoordinatorPage() {
           </div>
 
           <nav className="px-3 py-4 text-base text-slate-900">
-            {["Home", "Students"].map((item) => (
+            {[
+              { label: "Home", key: "home" },
+              { label: "Students", key: "students" },
+              { label: "PG Registration", key: "pg" },
+            ].map(({ label, key }) => (
               <button
                 type="button"
-                key={item}
-                onClick={() => item === "Home" ? setActiveMenu("home") : item === "Students" ? setActiveMenu("students") : null}
+                key={key}
+                onClick={() => setActiveMenu(key)}
                 className={`mb-1 block w-full px-3 py-2 text-left ${
-                  (activeMenu === "home" && item === "Home") || (activeMenu === "students" && item === "Students")
-                    ? "bg-slate-200 font-semibold"
-                    : "hover:bg-slate-100"
+                  activeMenu === key ? "bg-slate-200 font-semibold" : "hover:bg-slate-100"
                 }`}
               >
-                {item}
+                {label}
               </button>
             ))}
           </nav>
@@ -523,7 +526,11 @@ export default function CoordinatorPage() {
             <button onClick={handleLogout} className="bg-slate-200 px-3 py-1 text-sm hover:bg-slate-300">Logout</button>
           </header>
 
-          <div className="p-4">{activeMenu === "home" ? renderHome() : renderStudents()}</div>
+          <div className="p-4">
+            {activeMenu === "home" && renderHome()}
+            {activeMenu === "students" && renderStudents()}
+            {activeMenu === "pg" && <CoordinatorPgPage />}
+          </div>
         </main>
       </div>
 

@@ -31,6 +31,8 @@ export default function LoginPage() {
         navigate("/coordinator", { replace: true });
       } else if (roleFromUrl === "student") {
         navigate("/student/landing", { replace: true });
+      } else if (roleFromUrl === "pg_student") {
+        navigate("/pg/registration", { replace: true });
       }
       return;
     }
@@ -49,6 +51,7 @@ export default function LoginPage() {
           const data = await res.json();
           if (data.role === "admin") navigate("/coordinator", { replace: true });
           else if (data.role === "student") navigate("/student/landing", { replace: true });
+          else if (data.role === "pg_student") navigate("/pg/registration", { replace: true });
         }
       } catch {
         // token invalid — stay on login

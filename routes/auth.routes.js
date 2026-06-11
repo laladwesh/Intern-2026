@@ -1,6 +1,7 @@
 import express from "express";
 import Admin from "../models/Admin.model.js";
 import Student from "../models/Student.model.js";
+import PgStudent from "../models/PgStudent.model.js";
 import { generateToken, protect } from "../middleware/auth.js";
 import { getAuthUrl, acquireTokenByCode } from "../config/msal.js";
 
@@ -115,9 +116,24 @@ router.get("/outlook/callback", async (req, res) => {
       return res.redirect(buildFrontendRedirectUrl(token, "student"));
     }
 
-    return res.status(403).json({
-      message: "You are not authorized. Your Outlook email is not mapped to admin or student records.",
-    });
+    // 3) Check PG student
+    const pgStudent = await PgStudent.findOne({ email });
+    if (pgStudent) {
+      if (!pgStudent.outlook_id) {
+        pgStudent.outlook_id = outlookId;
+        if (!pgStudent.name) pgStudent.name = name;
+        await pgStudent.save();
+      }
+
+      const token = generateToken(pgStudent._id, "pg_student");
+      return res.redirect(buildFrontendRedirectUrl(token, "pg_student"));
+    }
+
+    return res.redirect(
+      buildFrontendErrorRedirectUrl(
+        "You are not authorized. Your Outlook email is not registered for this portal."
+      )
+    );
   } catch (error) {
     res.status(500).json({ message: "Outlook auth failed", error: error.message });
   }
@@ -140,6 +156,12 @@ router.get("/me", protect, async (req, res) => {
         return res.status(403).json({ message: BLOCKED_STUDENT_MESSAGE });
       }
       return res.json({ role: "student", user: student });
+    }
+
+    if (req.user.role === "pg_student") {
+      const pgStudent = await PgStudent.findById(req.user.id).select("-__v");
+      if (!pgStudent) return res.status(404).json({ message: "PG Student not found" });
+      return res.json({ role: "pg_student", user: pgStudent });
     }
 
     return res.status(403).json({ message: "Invalid role" });

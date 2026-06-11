@@ -13,6 +13,8 @@ import studentAuthRoutes from "./routes/student.auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import shareRoutes from "./routes/share.routes.js";
+import pgRoutes from "./routes/pg.routes.js";
+import pgAdminRoutes from "./routes/pg.admin.routes.js";
 
 // Utilities
 import { startCleanupService } from "./utils/cleanupService.js";
@@ -106,23 +108,30 @@ const sendSharedFile = async (req, res, next) => {
 app.get(`${API_BASE_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_BASE_PATH}/cv/:filename`, sendUploadFile("cvs"));
 app.get(`${API_BASE_PATH}/shared/:key`, sendSharedFile);
+app.get(`${API_BASE_PATH}/pg-image/:filename`, sendUploadFile("pg-images"));
 app.get(`${API_COMPAT_PATH}/image/:filename`, sendUploadFile("profile_pics"));
 app.get(`${API_COMPAT_PATH}/cv/:filename`, sendUploadFile("cvs"));
 app.get(`${API_COMPAT_PATH}/shared/:filename`, sendUploadFile("shared-files"));
+app.get(`${API_COMPAT_PATH}/pg-image/:filename`, sendUploadFile("pg-images"));
 
-// Routes
+// Routes — more-specific paths BEFORE less-specific ones
 app.use(`${API_BASE_PATH}/auth`, authRoutes);
 app.use(`${API_BASE_PATH}/admin/auth`, adminAuthRoutes);
-app.use(`${API_BASE_PATH}/student/auth`, studentAuthRoutes);
+app.use(`${API_BASE_PATH}/admin/pg`, pgAdminRoutes);
 app.use(`${API_BASE_PATH}/admin`, adminRoutes);
+app.use(`${API_BASE_PATH}/student/auth`, studentAuthRoutes);
 app.use(`${API_BASE_PATH}/student`, studentRoutes);
 app.use(`${API_BASE_PATH}/share`, shareRoutes);
+app.use(`${API_BASE_PATH}/pg`, pgRoutes);
 app.use(`${API_COMPAT_PATH}/auth`, authRoutes);
 app.use(`${API_COMPAT_PATH}/admin/auth`, adminAuthRoutes);
-app.use(`${API_COMPAT_PATH}/student/auth`, studentAuthRoutes);
+app.use(`${API_COMPAT_PATH}/admin/pg`, pgAdminRoutes);
 app.use(`${API_COMPAT_PATH}/admin`, adminRoutes);
+app.use(`${API_COMPAT_PATH}/student/auth`, studentAuthRoutes);
 app.use(`${API_COMPAT_PATH}/student`, studentRoutes);
 app.use(`${API_COMPAT_PATH}/share`, shareRoutes);
+app.use(`${API_COMPAT_PATH}/pg`, pgRoutes);
+app.use(`${API_COMPAT_PATH}/pg`, pgRoutes);
 
 app.get(`${API_BASE_PATH}/health`, (req, res) => {
   res.json({ message: "CCD Intern 2026 API is running" });

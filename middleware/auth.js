@@ -69,6 +69,14 @@ export const studentOnly = (req, res, next) => {
     });
 };
 
+// PG Student only middleware
+export const pgStudentOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "pg_student") {
+    return res.status(403).json({ message: "Access denied. PG Student only." });
+  }
+  next();
+};
+
 // Check if deadline has passed (student can only edit before deadline)
 export const checkDeadline = async (req, res, next) => {
   try {

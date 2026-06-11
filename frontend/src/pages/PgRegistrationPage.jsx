@@ -103,7 +103,6 @@ function WelcomeScreen({ deadline, onLogin, loading }) {
           <p>• This photo will be printed on your <strong>Placement ID Card</strong></p>
           <p>• Upload a <strong>professional, formal photograph</strong></p>
           <p>• Photo will be resized to <strong>500 × 400 pixels</strong> automatically</p>
-          {/* <p>• Wear formal attire — plain light background preferred</p> */}
           <p>• Accepted formats: <strong>JPEG / PNG</strong> &nbsp;|&nbsp; Max: <strong>5 MB</strong></p>
         </div>
 
@@ -367,7 +366,6 @@ function RegistrationForm({ profile, deadline, onLogout, onSubmitted }) {
 
           {/* Instructions like step-4 of intern form */}
           <div className="mb-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600 space-y-1">
-            {/* <p>• Wear <strong>formal attire</strong> (shirt/kurta for men, formal dress for women)</p> */}
             <p>• <strong>Plain, light background</strong> preferred (white or off-white)</p>
             <p>• Face should be clearly visible — no sunglasses</p>
             <p>• Accepted formats: <strong>JPEG, PNG</strong> &nbsp;|&nbsp; Max size: <strong>5 MB</strong></p>

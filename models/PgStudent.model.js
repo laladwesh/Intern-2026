@@ -29,6 +29,23 @@ const pgStudentSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    mobile: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    hostel: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    // ObjectId stored as string — matches _id in placement portal's programmes collection
+    // Use mongoose.Schema.Types.ObjectId so it round-trips cleanly when migrating
+    programme: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      // ref: "programme"  — uncomment when migrating to the main placement-portal DB
+    },
     profile_photo: {
       type: String,
       default: null,

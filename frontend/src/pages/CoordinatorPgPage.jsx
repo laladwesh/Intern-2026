@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_BASE, authHeaders, authHeadersFormData, clearSession } from "../utils/auth";
+import { getProgrammeDisplay } from "../utils/pgProgrammes";
 
 function toDateTimeLocalValue(date) {
   if (!date) return "";
@@ -207,7 +208,9 @@ export default function CoordinatorPgPage() {
   const filteredStudents = students.filter((s) => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
-    return [s.email, s.name, s.roll_number].filter(Boolean).some((v) => v.toLowerCase().includes(q));
+    return [s.email, s.name, s.roll_number, s.mobile, s.hostel, getProgrammeDisplay(s.programme)]
+      .filter(Boolean)
+      .some((v) => v.toLowerCase().includes(q));
   });
 
   const getPhotoUrl = (filename) => `${API_BASE}/pg-image/${encodeURIComponent(filename)}`;
@@ -349,7 +352,10 @@ export default function CoordinatorPgPage() {
                   <th className="p-3">#</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Name</th>
-                  <th className="p-3">Roll Number</th>
+                  <th className="p-3">Roll No.</th>
+                  <th className="p-3">Mobile</th>
+                  <th className="p-3">Hostel</th>
+                  <th className="p-3">Programme</th>
                   <th className="p-3">Photo</th>
                   <th className="p-3">Status</th>
                   <th className="p-3">Actions</th>
@@ -362,13 +368,16 @@ export default function CoordinatorPgPage() {
                     <td className="p-3">{s.email}</td>
                     <td className="p-3">{s.name || <span className="text-slate-400">—</span>}</td>
                     <td className="p-3">{s.roll_number || <span className="text-slate-400">—</span>}</td>
+                    <td className="p-3">{s.mobile || <span className="text-slate-400">—</span>}</td>
+                    <td className="p-3">{s.hostel || <span className="text-slate-400">—</span>}</td>
+                    <td className="p-3 max-w-[200px]">
+                      <span className="block truncate text-xs" title={getProgrammeDisplay(s.programme)}>
+                        {getProgrammeDisplay(s.programme)}
+                      </span>
+                    </td>
                     <td className="p-3">
                       {s.profile_photo ? (
-                        <a
-                          href={getPhotoUrl(s.profile_photo)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <a href={getPhotoUrl(s.profile_photo)} target="_blank" rel="noreferrer">
                           <img
                             src={getPhotoUrl(s.profile_photo)}
                             alt={s.name || s.email}

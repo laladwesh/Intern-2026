@@ -52,13 +52,16 @@ router.get("/profile", protect, pgStudentOnly, async (req, res) => {
   }
 });
 
-// PUT /api/pg/profile — update name and roll_number
+// PUT /api/pg/profile — update editable fields
 router.put("/profile", protect, pgStudentOnly, checkPgDeadline, async (req, res) => {
   try {
-    const { name, roll_number } = req.body;
+    const { name, roll_number, mobile, hostel, programme } = req.body;
     const update = {};
     if (name !== undefined) update.name = String(name).trim();
     if (roll_number !== undefined) update.roll_number = String(roll_number).trim();
+    if (mobile !== undefined) update.mobile = String(mobile).trim();
+    if (hostel !== undefined) update.hostel = String(hostel).trim();
+    if (programme !== undefined) update.programme = programme || null;
 
     const student = await PgStudent.findByIdAndUpdate(req.user.id, update, {
       new: true,
@@ -121,7 +124,7 @@ router.post("/upload/photo", protect, pgStudentOnly, (req, res) => {
       }
 
       student.profile_photo = finalFilename;
-      student.is_registered = !!(student.name && student.roll_number && finalFilename);
+      student.is_registered = !!(student.name && student.roll_number && student.mobile && student.programme && finalFilename);
       await student.save();
 
       res.json({

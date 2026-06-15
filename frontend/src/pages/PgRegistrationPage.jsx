@@ -76,7 +76,7 @@ function WelcomeScreen({ deadline, onLogin, loading }) {
           <p className="font-semibold text-slate-800 mb-2">Instructions:</p>
           <p>• This photo will be printed on your <strong>Placement ID Card</strong></p>
           <p>• Upload a <strong>professional, formal photograph</strong></p>
-          <p>• Photo will be resized to <strong>500 × 400 pixels</strong> automatically</p>
+          <p>• Photo will be stored as uploaded — <strong>no cropping or resizing</strong></p>
           <p>• Accepted formats: <strong>JPEG / PNG</strong> &nbsp;|&nbsp; Max: <strong>5 MB</strong></p>
         </div>
 
@@ -125,7 +125,7 @@ function SubmissionSuccessView({ profile, deadline, canEdit, onEdit, onLogout, p
             className="rounded-lg border-2 border-[var(--brand)] object-cover shadow-md"
             style={{ width: 250, height: 200 }}
           />
-          <p className="text-xs text-slate-500">Your submitted photo (500 × 400 px)</p>
+          <p className="text-xs text-slate-500">Your submitted photo</p>
         </div>
 
         <div className="mt-5 mx-auto max-w-sm rounded-xl border border-slate-200 bg-white/70 px-5 py-4 text-sm space-y-1.5">
@@ -362,7 +362,7 @@ function RegistrationForm({ profile, deadline, onLogout, onSubmitted }) {
           <h3 className="text-base font-semibold mb-1">Upload Profile Photo</h3>
           <p className="text-xs text-slate-500 mb-3">
             Please ensure the photo you upload is a <strong>professional/formal photograph</strong>.
-            It will be automatically resized to <strong>500 × 400 px</strong> and printed on your Placement ID card.
+            Your photo will be stored as-is and printed on your Placement ID card.
           </p>
 
           <div className="mb-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600 space-y-1">
@@ -386,7 +386,7 @@ function RegistrationForm({ profile, deadline, onLogout, onSubmitted }) {
               {photoPreview && (
                 <div className="mt-3 flex flex-col items-start gap-1">
                   <img src={photoPreview} alt="Preview" className="rounded-lg border border-slate-300 object-cover" style={{ width: 200, height: 160 }} />
-                  <p className="text-xs text-slate-400">Preview — will be cropped to 500×400 on upload</p>
+                  <p className="text-xs text-slate-400">Preview — original photo will be stored as-is</p>
                   <button
                     type="button"
                     onClick={() => { setPhotoFile(null); setPhotoPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}

@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import sharp from "sharp";
 import PgStudent from "../models/PgStudent.model.js";
 import PgDeadline from "../models/PgDeadline.model.js";
 import { protect } from "../middleware/auth.js";
@@ -74,7 +73,7 @@ router.put("/profile", protect, pgStudentOnly, checkPgDeadline, async (req, res)
   }
 });
 
-// POST /api/pg/upload/photo — upload profile photo (500×400, auto-resized)
+// POST /api/pg/upload/photo — upload profile photo (original, no resize)
 router.post("/upload/photo", protect, pgStudentOnly, (req, res) => {
   uploadPgPhoto(req, res, async (err) => {
     if (err) {
@@ -95,48 +94,35 @@ router.post("/upload/photo", protect, pgStudentOnly, (req, res) => {
         });
       }
 
-      // Resize to exactly 500×400 (cover crop centered)
-      const processedPath = req.file.path + ".processed";
-      await sharp(req.file.path)
-        .resize(500, 400, { fit: "cover", position: "center" })
-        .jpeg({ quality: 90 })
-        .toFile(processedPath);
-
-      fs.unlinkSync(req.file.path);
-
-      // Replace extension with .jpg since we always output JPEG
-      const finalFilename = req.file.filename.replace(/\.[^.]+$/, ".jpg");
-      const finalPath = path.join(path.dirname(req.file.path), finalFilename);
-      fs.renameSync(processedPath, finalPath);
-
-      // Delete old photo if it exists
       const student = await PgStudent.findById(req.user.id);
       if (!student) {
-        fs.unlinkSync(finalPath);
+        fs.unlinkSync(req.file.path);
         return res.status(404).json({ message: "PG Student not found" });
       }
 
+      // Delete old photo if it exists
       if (student.profile_photo) {
         const oldPath = path.join(process.cwd(), "uploads", "pg-images", student.profile_photo);
         if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
+          try { fs.unlinkSync(oldPath); } catch {}
         }
       }
 
-      student.profile_photo = finalFilename;
-      student.is_registered = !!(student.name && student.roll_number && student.mobile && student.programme && finalFilename);
+      // Store original file as-is — no cropping or resizing
+      student.profile_photo = req.file.filename;
+      student.is_registered = !!(student.name && student.roll_number && student.mobile && student.programme && req.file.filename);
       await student.save();
 
       res.json({
-        message: "Photo uploaded and resized to 500×400 successfully",
-        filename: finalFilename,
+        message: "Photo uploaded successfully",
+        filename: req.file.filename,
         student,
       });
     } catch (error) {
       if (req.file && fs.existsSync(req.file.path)) {
         try { fs.unlinkSync(req.file.path); } catch {}
       }
-      res.status(500).json({ message: "Error processing image", error: error.message });
+      res.status(500).json({ message: "Error saving photo", error: error.message });
     }
   });
 });

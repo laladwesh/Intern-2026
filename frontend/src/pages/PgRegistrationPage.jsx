@@ -122,8 +122,7 @@ function SubmissionSuccessView({ profile, deadline, canEdit, onEdit, onLogout, p
           <img
             src={photoUrl}
             alt="Submitted profile"
-            className="rounded-lg border-2 border-[var(--brand)] object-cover shadow-md"
-            style={{ width: 250, height: 200 }}
+            className="rounded-lg border-2 border-[var(--brand)] shadow-md max-w-xs w-full"
           />
           <p className="text-xs text-slate-500">Your submitted photo</p>
         </div>
@@ -385,7 +384,7 @@ function RegistrationForm({ profile, deadline, onLogout, onSubmitted }) {
 
               {photoPreview && (
                 <div className="mt-3 flex flex-col items-start gap-1">
-                  <img src={photoPreview} alt="Preview" className="rounded-lg border border-slate-300 object-cover" style={{ width: 200, height: 160 }} />
+                  <img src={photoPreview} alt="Preview" className="rounded-lg border border-slate-300 max-w-xs w-full" />
                   <p className="text-xs text-slate-400">Preview — original photo will be stored as-is</p>
                   <button
                     type="button"
@@ -403,8 +402,7 @@ function RegistrationForm({ profile, deadline, onLogout, onSubmitted }) {
                   <img
                     src={`${API_BASE}/pg-image/${encodeURIComponent(profile.profile_photo)}`}
                     alt="Current photo"
-                    className="rounded-lg border border-slate-300 object-cover"
-                    style={{ width: 200, height: 160 }}
+                    className="rounded-lg border border-slate-300 max-w-xs w-full"
                   />
                 </div>
               )}

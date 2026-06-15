@@ -39,6 +39,7 @@ export const getAuthUrl = async () => {
   const authCodeUrlParameters = {
     scopes: ["user.read", "openid", "profile", "email"],
     redirectUri: process.env.AZURE_REDIRECT_URI,
+    prompt: "select_account",
   };
   return await msalInstance.getAuthCodeUrl(authCodeUrlParameters);
 };

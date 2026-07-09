@@ -3,7 +3,7 @@ import Student from "../models/Student.model.js";
 import Admin from "../models/Admin.model.js";
 import Deadline from "../models/Deadline.model.js";
 import { protect, adminOnly } from "../middleware/auth.js";
-import { uploadExcel, uploadProfilePic } from "../middleware/upload.js";
+import { uploadExcel, uploadProfilePic, uploadImage } from "../middleware/upload.js";
 import path from "path";
 import xlsx from "xlsx";
 import fs from "fs";
@@ -495,6 +495,15 @@ router.get("/stats", protect, adminOnly, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
+});
+
+// POST /api/admin/upload-image — save photo to profile_pics, return filename only (no DB update)
+router.post("/upload-image", protect, adminOnly, (req, res) => {
+  uploadImage(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    res.json({ filename: req.file.filename });
+  });
 });
 
 // POST /api/admin/upload-pic-for-roll — bulk: save profile pic for a student by roll number

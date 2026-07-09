@@ -94,9 +94,16 @@ const excelFilter = (req, file, cb) => {
 // Upload middlewares
 export const uploadProfilePic = multer({
   storage: profilePicStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: imageFilter,
 }).single("profile_pic");
+
+// For bulk admin image uploads — no DB update, just saves to profile_pics and returns filename
+export const uploadImage = multer({
+  storage: profilePicStorage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: imageFilter,
+}).single("photo");
 
 export const uploadCV = multer({
   storage: cvStorage,

@@ -3,7 +3,8 @@ import Student from "../models/Student.model.js";
 import Admin from "../models/Admin.model.js";
 import Deadline from "../models/Deadline.model.js";
 import { protect, adminOnly } from "../middleware/auth.js";
-import { uploadExcel } from "../middleware/upload.js";
+import { uploadExcel, uploadProfilePic } from "../middleware/upload.js";
+import path from "path";
 import xlsx from "xlsx";
 import fs from "fs";
 
@@ -494,6 +495,42 @@ router.get("/stats", protect, adminOnly, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
+});
+
+// POST /api/admin/upload-pic-for-roll — bulk: save profile pic for a student by roll number
+router.post("/upload-pic-for-roll", protect, adminOnly, (req, res) => {
+  uploadProfilePic(req, res, async (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const roll_number = (req.body.roll_number || "").trim();
+    if (!roll_number) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: "roll_number is required" });
+    }
+
+    try {
+      const student = await Student.findOne({ roll_number });
+      if (!student) {
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ message: `No student with roll number: ${roll_number}` });
+      }
+
+      // Delete old photo if present
+      if (student.profile_pic) {
+        const oldPath = path.join(process.cwd(), "uploads", "profile_pics", student.profile_pic);
+        if (fs.existsSync(oldPath)) try { fs.unlinkSync(oldPath); } catch {}
+      }
+
+      student.profile_pic = req.file.filename;
+      await student.save();
+
+      res.json({ roll_number, filename: req.file.filename });
+    } catch (error) {
+      if (fs.existsSync(req.file.path)) try { fs.unlinkSync(req.file.path); } catch {}
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  });
 });
 
 export default router;

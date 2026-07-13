@@ -563,7 +563,7 @@ router.post("/tools/cv-downloader", shareAuthMiddleware, uploadSharedFile.single
   }
 });
 
-// ── PDF to Images — async job system ─────────────────────────────────────────
+// ── PDF to Images — async job system (simple upload + SSE progress) ──────────
 
 const pdfJobs = new Map(); // jobId → job state
 

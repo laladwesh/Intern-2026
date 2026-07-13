@@ -3,12 +3,13 @@ const SHARE_USERNAME = "ccd@goat";
 const SHARE_PASSWORD = "awie";
 
 export const shareAuthMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  // EventSource can't set headers — accept auth via ?auth= query param as fallback
+  const authHeader = req.headers.authorization || req.query.auth;
 
   if (!authHeader || !authHeader.startsWith("Basic ")) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: "Authentication required",
-      authenticated: false 
+      authenticated: false
     });
   }
 

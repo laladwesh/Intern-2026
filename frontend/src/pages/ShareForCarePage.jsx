@@ -649,7 +649,24 @@ export default function ShareForCarePage() {
                     onChange={handlePdfToImages}
                     disabled={loading}
                   />
-                  <p>Convert every PDF page to PNG — downloads as ZIP</p>
+                  {pdfJob ? (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 12, marginBottom: 4, color: "#555" }}>
+                        {pdfJob.stage === "uploading" && "Uploading…"}
+                        {pdfJob.stage === "queued" && "Queued…"}
+                        {pdfJob.stage === "counting" && "Reading PDF…"}
+                        {pdfJob.stage === "converting" && `Converting page ${pdfJob.pagesConverted}${pdfJob.totalPages ? ` / ${pdfJob.totalPages}` : ""}…`}
+                        {pdfJob.stage === "zipping" && "Creating ZIP…"}
+                        {pdfJob.stage === "done" && "✓ Done!"}
+                      </div>
+                      <div style={{ background: "#e0e0e0", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                        <div style={{ background: pdfJob.stage === "done" ? "#4caf50" : "#1976d2", height: "100%", width: `${pdfJob.progress || 0}%`, transition: "width 0.8s ease" }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{pdfJob.progress || 0}%</div>
+                    </div>
+                  ) : (
+                    <p>Convert every PDF page to PNG — downloads as ZIP (up to 2 GB)</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,8 +1,10 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { execFile } from "child_process";
+import { execFile, spawn } from "child_process";
 import { promisify } from "util";
+import crypto from "crypto";
+import multer from "multer";
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
 import archiver from "archiver";
@@ -561,47 +563,94 @@ router.post("/tools/cv-downloader", shareAuthMiddleware, uploadSharedFile.single
   }
 });
 
-// PDF to Images — converts every page to a PNG, bundles into ZIP
-router.post("/tools/pdf-to-images", shareAuthMiddleware, uploadSharedFile.single("pdf"), async (req, res) => {
-  let tempDir = null;
-  try {
-    if (!req.file) return res.status(400).json({ message: "No PDF uploaded" });
+// ── PDF to Images — async job system ─────────────────────────────────────────
 
-    const inputPath = req.file.path;
-    tempDir = path.join(process.cwd(), "uploads", "shared-files", `pdf-pages-${Date.now()}`);
+const pdfJobs = new Map(); // jobId → job state
+
+function makePdfJobId() {
+  return crypto.randomBytes(8).toString("hex");
+}
+
+const uploadLargePdf = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "shared-files");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, `pdf-upload-${Date.now()}.pdf`);
+    },
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 * 1024 }, // 2 GB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf" || file.originalname.toLowerCase().endsWith(".pdf"))
+      cb(null, true);
+    else cb(new Error("Only PDF files are allowed"));
+  },
+}).single("pdf");
+
+async function runPdfJob(jobId, inputPath, originalName) {
+  const job = pdfJobs.get(jobId);
+  const tempDir = path.join(process.cwd(), "uploads", "shared-files", `pdf-pages-${jobId}`);
+  try {
     fs.mkdirSync(tempDir, { recursive: true });
 
+    // get total page count
+    job.stage = "counting";
+    const { stdout: infoOut } = await execFileAsync("pdfinfo", [inputPath]);
+    const m = infoOut.match(/Pages:\s*(\d+)/i);
+    const totalPages = m ? parseInt(m[1], 10) : 0;
+    job.totalPages = totalPages;
+
+    // start pdftoppm as a background process
+    job.stage = "converting";
     const outputPrefix = path.join(tempDir, "page");
+    const child = spawn("pdftoppm", ["-png", "-r", "150", inputPath, outputPrefix]);
 
-    // pdftoppm converts each page to page-1.png, page-2.png, …
-    await execFileAsync("pdftoppm", ["-png", "-r", "150", inputPath, outputPrefix]);
+    // poll tempDir for newly written PNGs
+    const poller = setInterval(() => {
+      try {
+        const done = fs.readdirSync(tempDir).filter(f => f.endsWith(".png")).length;
+        job.pagesConverted = done;
+        job.progress = totalPages > 0 ? Math.min(90, Math.round((done / totalPages) * 90)) : 0;
+      } catch {}
+    }, 800);
 
-    fs.unlinkSync(inputPath);
+    await new Promise((resolve, reject) => {
+      child.on("close", code => {
+        clearInterval(poller);
+        code === 0 ? resolve() : reject(new Error(`pdftoppm exited with code ${code}`));
+      });
+      child.on("error", err => { clearInterval(poller); reject(err); });
+    });
+
+    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
     const pages = fs.readdirSync(tempDir).filter(f => f.endsWith(".png")).sort();
-    if (pages.length === 0) throw new Error("No pages generated — is the file a valid PDF?");
+    job.pagesConverted = pages.length;
+    job.progress = 93;
+    job.stage = "zipping";
 
-    const baseName = req.file.originalname.replace(/\.pdf$/i, "");
-    const zipFileName = `pdf-images-${Date.now()}.zip`;
+    const baseName = originalName.replace(/\.pdf$/i, "");
+    const zipFileName = `pdf-images-${jobId}.zip`;
     const zipPath = path.join(process.cwd(), "uploads", "shared-files", zipFileName);
 
     await new Promise((resolve, reject) => {
-      const output = fs.createWriteStream(zipPath);
-      const archive = archiver("zip", { zlib: { level: 6 } });
-      output.on("close", resolve);
-      archive.on("error", reject);
-      archive.pipe(output);
-      pages.forEach(p => archive.file(path.join(tempDir, p), { name: p }));
-      archive.finalize();
+      const out = fs.createWriteStream(zipPath);
+      const arc = archiver("zip", { zlib: { level: 3 } });
+      out.on("close", resolve);
+      arc.on("error", reject);
+      arc.pipe(out);
+      pages.forEach(p => arc.file(path.join(tempDir, p), { name: p }));
+      arc.finalize();
     });
 
     fs.rmSync(tempDir, { recursive: true });
-    tempDir = null;
 
     const stats = fs.statSync(zipPath);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     const shareUrl = await generateShareUrl(`${baseName}-images.zip`);
-
     const sharedFile = new SharedFile({
       originalName: `${baseName}-images.zip`,
       fileName: zipFileName,
@@ -613,13 +662,64 @@ router.post("/tools/pdf-to-images", shareAuthMiddleware, uploadSharedFile.single
     });
     await sharedFile.save();
 
-    res.json({ message: `Converted ${pages.length} pages to PNG`, pageCount: pages.length, file: sharedFile });
-  } catch (error) {
-    console.error("Error converting PDF to images:", error);
-    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    if (tempDir && fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
-    res.status(500).json({ message: "Failed to convert PDF to images", error: error.message });
+    job.stage = "done";
+    job.progress = 100;
+    job.file = sharedFile;
+    setTimeout(() => pdfJobs.delete(jobId), 15 * 60 * 1000);
+  } catch (err) {
+    console.error("PDF job failed:", err);
+    if (fs.existsSync(inputPath)) try { fs.unlinkSync(inputPath); } catch {}
+    if (fs.existsSync(tempDir)) try { fs.rmSync(tempDir, { recursive: true }); } catch {}
+    job.stage = "error";
+    job.error = err.message;
   }
+}
+
+// POST /api/share/tools/pdf-to-images — upload PDF, start job, return jobId immediately
+router.post("/tools/pdf-to-images", shareAuthMiddleware, (req, res) => {
+  uploadLargePdf(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: "No PDF uploaded" });
+
+    const jobId = makePdfJobId();
+    pdfJobs.set(jobId, { stage: "queued", progress: 0, totalPages: 0, pagesConverted: 0, file: null, error: null });
+
+    runPdfJob(jobId, req.file.path, req.file.originalname);
+
+    res.json({ jobId });
+  });
+});
+
+// GET /api/share/tools/pdf-to-images/progress/:jobId — SSE stream
+router.get("/tools/pdf-to-images/progress/:jobId", shareAuthMiddleware, (req, res) => {
+  const { jobId } = req.params;
+  if (!pdfJobs.has(jobId)) return res.status(404).json({ message: "Job not found" });
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  const ticker = setInterval(() => {
+    const job = pdfJobs.get(jobId);
+    if (!job) { clearInterval(ticker); res.end(); return; }
+
+    send({ stage: job.stage, progress: job.progress, totalPages: job.totalPages, pagesConverted: job.pagesConverted });
+
+    if (job.stage === "done") {
+      send({ stage: "done", progress: 100, file: job.file });
+      clearInterval(ticker);
+      res.end();
+    } else if (job.stage === "error") {
+      send({ stage: "error", error: job.error });
+      clearInterval(ticker);
+      res.end();
+    }
+  }, 800);
+
+  req.on("close", () => clearInterval(ticker));
 });
 
 // Cleanup expired files (manual trigger - can be called by cron)

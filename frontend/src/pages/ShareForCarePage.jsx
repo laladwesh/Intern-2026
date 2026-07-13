@@ -20,6 +20,9 @@ export default function ShareForCarePage() {
   const [activeTab, setActiveTab] = useState("upload");
   const [filterPermanent, setFilterPermanent] = useState("all");
 
+  // PDF to Images state
+  const [pdfJob, setPdfJob] = useState(null); // { stage, progress, totalPages, pagesConverted }
+
   // Excel Creator State
   const [excelData, setExcelData] = useState([
     ["", "", "", ""],
@@ -304,29 +307,63 @@ export default function ShareForCarePage() {
       e.target.value = "";
       return;
     }
+
+    setPdfJob({ stage: "uploading", progress: 0, totalPages: 0, pagesConverted: 0 });
     setLoading(true);
+
     try {
       const formData = new FormData();
       formData.append("pdf", file);
-      const response = await fetch(`${API_URL}/share/tools/pdf-to-images`, {
+
+      const res = await fetch(`${API_URL}/share/tools/pdf-to-images`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: formData,
       });
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`Done! ${result.pageCount} pages → ZIP ready`);
-        fetchFiles();
-        e.target.value = "";
-      } else {
-        const err = await response.json();
-        toast.error(err.message || "Conversion failed");
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Upload failed");
       }
+
+      const { jobId } = await res.json();
+
+      // Connect to SSE progress stream
+      const authHeader = getAuthHeaders().Authorization;
+      const sse = new EventSource(
+        `${API_URL}/share/tools/pdf-to-images/progress/${jobId}?auth=${encodeURIComponent(authHeader)}`
+      );
+
+      sse.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        setPdfJob(data);
+
+        if (data.stage === "done") {
+          sse.close();
+          setLoading(false);
+          toast.success(`Done! ${data.file?.originalName || "ZIP"} ready`);
+          fetchFiles();
+          e.target.value = "";
+          setTimeout(() => setPdfJob(null), 4000);
+        } else if (data.stage === "error") {
+          sse.close();
+          setLoading(false);
+          toast.error(data.error || "Conversion failed");
+          setPdfJob(null);
+        }
+      };
+
+      sse.onerror = () => {
+        sse.close();
+        setLoading(false);
+        toast.error("Lost connection to server");
+        setPdfJob(null);
+      };
     } catch (error) {
       console.error("PDF to images error:", error);
-      toast.error("Conversion failed");
-    } finally {
+      toast.error(error.message || "Conversion failed");
       setLoading(false);
+      setPdfJob(null);
     }
   };
 

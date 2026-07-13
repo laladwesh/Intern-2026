@@ -295,6 +295,41 @@ export default function ShareForCarePage() {
     }
   };
 
+  // PDF to Images
+  const handlePdfToImages = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.name.match(/\.pdf$/i)) {
+      toast.error("Please upload a PDF file");
+      e.target.value = "";
+      return;
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("pdf", file);
+      const response = await fetch(`${API_URL}/share/tools/pdf-to-images`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Done! ${result.pageCount} pages → ZIP ready`);
+        fetchFiles();
+        e.target.value = "";
+      } else {
+        const err = await response.json();
+        toast.error(err.message || "Conversion failed");
+      }
+    } catch (error) {
+      console.error("PDF to images error:", error);
+      toast.error("Conversion failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // CV Downloader
   const handleCVDownloader = async (e) => {
     const file = e.target.files[0];
@@ -567,6 +602,17 @@ export default function ShareForCarePage() {
                     disabled={loading}
                   />
                   <p>Upload Excel with CV URLs to download all CVs as ZIP</p>
+                </div>
+
+                <div className="tool-box">
+                  <h3>PDF to Images</h3>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePdfToImages}
+                    disabled={loading}
+                  />
+                  <p>Convert every PDF page to PNG — downloads as ZIP</p>
                 </div>
               </div>
             </div>

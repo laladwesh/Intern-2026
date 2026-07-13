@@ -19,6 +19,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
+RUN apk add --no-cache poppler-utils
+
 COPY config ./config
 COPY middleware ./middleware
 COPY models ./models

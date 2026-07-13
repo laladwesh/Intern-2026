@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
 import archiver from "archiver";
@@ -9,6 +11,8 @@ import axios from "axios";
 import SharedFile from "../models/SharedFile.model.js";
 import { shareAuthMiddleware, checkShareAuth } from "../middleware/shareAuth.js";
 import { uploadSharedFile } from "../middleware/shareUpload.js";
+
+const execFileAsync = promisify(execFile);
 
 const router = express.Router();
 
@@ -554,6 +558,67 @@ router.post("/tools/cv-downloader", shareAuthMiddleware, uploadSharedFile.single
     }
 
     res.status(500).json({ message: "Failed to process CVs", error: error.message });
+  }
+});
+
+// PDF to Images — converts every page to a PNG, bundles into ZIP
+router.post("/tools/pdf-to-images", shareAuthMiddleware, uploadSharedFile.single("pdf"), async (req, res) => {
+  let tempDir = null;
+  try {
+    if (!req.file) return res.status(400).json({ message: "No PDF uploaded" });
+
+    const inputPath = req.file.path;
+    tempDir = path.join(process.cwd(), "uploads", "shared-files", `pdf-pages-${Date.now()}`);
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const outputPrefix = path.join(tempDir, "page");
+
+    // pdftoppm converts each page to page-1.png, page-2.png, …
+    await execFileAsync("pdftoppm", ["-png", "-r", "150", inputPath, outputPrefix]);
+
+    fs.unlinkSync(inputPath);
+
+    const pages = fs.readdirSync(tempDir).filter(f => f.endsWith(".png")).sort();
+    if (pages.length === 0) throw new Error("No pages generated — is the file a valid PDF?");
+
+    const baseName = req.file.originalname.replace(/\.pdf$/i, "");
+    const zipFileName = `pdf-images-${Date.now()}.zip`;
+    const zipPath = path.join(process.cwd(), "uploads", "shared-files", zipFileName);
+
+    await new Promise((resolve, reject) => {
+      const output = fs.createWriteStream(zipPath);
+      const archive = archiver("zip", { zlib: { level: 6 } });
+      output.on("close", resolve);
+      archive.on("error", reject);
+      archive.pipe(output);
+      pages.forEach(p => archive.file(path.join(tempDir, p), { name: p }));
+      archive.finalize();
+    });
+
+    fs.rmSync(tempDir, { recursive: true });
+    tempDir = null;
+
+    const stats = fs.statSync(zipPath);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const shareUrl = await generateShareUrl(`${baseName}-images.zip`);
+
+    const sharedFile = new SharedFile({
+      originalName: `${baseName}-images.zip`,
+      fileName: zipFileName,
+      fileSize: stats.size,
+      mimeType: "application/zip",
+      isPermanent: false,
+      expiresAt,
+      shareUrl,
+    });
+    await sharedFile.save();
+
+    res.json({ message: `Converted ${pages.length} pages to PNG`, pageCount: pages.length, file: sharedFile });
+  } catch (error) {
+    console.error("Error converting PDF to images:", error);
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    if (tempDir && fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+    res.status(500).json({ message: "Failed to convert PDF to images", error: error.message });
   }
 });
 

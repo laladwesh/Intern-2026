@@ -54,6 +54,7 @@ const EMPTY_EDITABLE = {
   entrance_examination: "",
   rank_category: "",
   gate_score: "",
+  btech_cpi: "",
   jee_ma_gate_rank: "",
   jee_advanced_rank: "",
   portfolio_Link: "",
@@ -287,6 +288,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
         entrance_examination: initialProfile.entrance_examination || "",
         rank_category: initialProfile.rank_category || "",
         gate_score: initialProfile.gate_score ?? "",
+        btech_cpi: initialProfile.btech_cpi ?? "",
         jee_ma_gate_rank: initialProfile.jee_ma_gate_rank ?? "",
         jee_advanced_rank: initialProfile.jee_advanced_rank ?? "",
         portfolio_Link: cv.portfolio_Link || "",
@@ -339,6 +341,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
           entrance_examination: data.student.entrance_examination || "",
           rank_category: data.student.rank_category || "",
           gate_score: data.student.gate_score ?? "",
+          btech_cpi: data.student.btech_cpi ?? "",
           jee_ma_gate_rank: data.student.jee_ma_gate_rank ?? "",
           jee_advanced_rank: data.student.jee_advanced_rank ?? "",
           portfolio_Link: cv.portfolio_Link || "",
@@ -391,6 +394,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
       entrance_examination: form.entrance_examination || undefined,
       rank_category: form.rank_category || undefined,
       gate_score: toNumberOrUndefined(form.gate_score),
+      btech_cpi: toNumberOrUndefined(form.btech_cpi),
       jee_ma_gate_rank: toNumberOrUndefined(form.jee_ma_gate_rank),
       jee_advanced_rank: toNumberOrUndefined(form.jee_advanced_rank),
     };
@@ -756,6 +760,10 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
                 <label className="flex flex-col gap-1">
                   <span>GATE Rank (AIR)</span>
                   <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_ma_gate_rank} onChange={(e) => updateField("jee_ma_gate_rank", e.target.value)} disabled={!canEdit} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span>BTech CPI (1–10)</span>
+                  <input className="rounded border border-slate-300 px-3 py-2" type="number" step="0.01" min="1" max="10" value={form.btech_cpi} onChange={(e) => updateField("btech_cpi", e.target.value)} disabled={!canEdit} />
                 </label>
               </>
             ) : (

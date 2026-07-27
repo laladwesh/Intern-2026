@@ -187,6 +187,12 @@ const studentSchema = new Schema(
       type: Number,
       required: false,
     },
+    btech_cpi: {
+      type: Number,
+      required: false,
+      min: [1, "BTech CPI cannot be less than 1"],
+      max: [10, "BTech CPI cannot be more than 10"],
+    },
     jee_ma_gate_rank: {
       type: Number,
       required: false,

@@ -183,6 +183,10 @@ const studentSchema = new Schema(
       drive_Link: { type: String },
       portfolio_Link: { type: String },
     },
+    gate_score: {
+      type: Number,
+      required: false,
+    },
     jee_ma_gate_rank: {
       type: Number,
       required: false,

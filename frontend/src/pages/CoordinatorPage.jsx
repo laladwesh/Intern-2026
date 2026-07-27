@@ -200,7 +200,7 @@ export default function CoordinatorPage() {
       const payload = {
         ...newStudent,
         roll_number: Number(newStudent.roll_number),
-        major_cpi: Number(newStudent.major_cpi),
+        major_cpi: newStudent.major_cpi ? Number(newStudent.major_cpi) : undefined,
         minor_cpi: newStudent.minor_cpi ? Number(newStudent.minor_cpi) : undefined,
         minor: newStudent.minor || undefined,
         year_of_admission: Number(newStudent.year_of_admission),
@@ -562,7 +562,7 @@ export default function CoordinatorPage() {
             <select className="border border-slate-300 px-3 py-2" value={newStudent.programme} onChange={(e) => setNewStudent((p) => ({ ...p, programme: e.target.value }))}>
               {["BTech", "BDes", "MTech", "MDes", "MSc", "MA", "PhD", "Dual"].map((p) => <option key={p}>{p}</option>)}
             </select>
-            <input className="border border-slate-300 px-3 py-2" placeholder="Major CPI" value={newStudent.major_cpi} onChange={(e) => setNewStudent((p) => ({ ...p, major_cpi: e.target.value }))} required />
+            <input className="border border-slate-300 px-3 py-2" placeholder={newStudent.programme === "MTech" ? "Major CPI (optional)" : "Major CPI"} value={newStudent.major_cpi} onChange={(e) => setNewStudent((p) => ({ ...p, major_cpi: e.target.value }))} required={newStudent.programme !== "MTech"} />
             <input className="border border-slate-300 px-3 py-2" placeholder="Minor CPI (optional)" value={newStudent.minor_cpi} onChange={(e) => setNewStudent((p) => ({ ...p, minor_cpi: e.target.value }))} />
             <input className="border border-slate-300 px-3 py-2" placeholder="Year of Admission" value={newStudent.year_of_admission} onChange={(e) => setNewStudent((p) => ({ ...p, year_of_admission: e.target.value }))} required />
             <input className="border border-slate-300 px-3 py-2" placeholder="Year of Minor Admission (optional)" value={newStudent.year_of_minor_admission} onChange={(e) => setNewStudent((p) => ({ ...p, year_of_minor_admission: e.target.value }))} />

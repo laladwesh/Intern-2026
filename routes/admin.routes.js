@@ -133,7 +133,7 @@ router.post("/students", protect, adminOnly, async (req, res) => {
 
 // ==================== BULK UPLOAD ====================
 
-// Required Excel columns for bulk upload
+// Required Excel columns for bulk upload (major_cpi optional for MTech)
 const BULK_UPLOAD_COLUMNS = [
   "roll_number",
   "name",
@@ -168,9 +168,10 @@ router.post(
         return res.status(400).json({ message: "Excel file is empty" });
       }
 
-      // Validate columns
+      // Validate columns (major_cpi is optional for MTech rows)
       const fileColumns = Object.keys(data[0]);
-      const missingColumns = BULK_UPLOAD_COLUMNS.filter(
+      const alwaysRequired = BULK_UPLOAD_COLUMNS.filter(c => c !== "major_cpi");
+      const missingColumns = alwaysRequired.filter(
         (col) => !fileColumns.includes(col)
       );
       if (missingColumns.length > 0) {
@@ -186,6 +187,13 @@ router.post(
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         try {
+          // major_cpi required for all programmes except MTech
+          if (row.programme !== "MTech" && (row.major_cpi === undefined || row.major_cpi === "")) {
+            results.failed++;
+            results.errors.push({ row: i + 2, message: "major_cpi is required for non-MTech students" });
+            continue;
+          }
+
           // Only pick allowed bulk upload fields
           const studentData = {};
           const allowedFields = [

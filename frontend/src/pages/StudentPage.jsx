@@ -132,8 +132,14 @@ function ReadOnlyAcademics({ student }) {
         <div><span className="font-medium">Programme:</span> {student?.programme || "-"}</div>
         <div><span className="font-medium">Major:</span> {student?.major || "-"}</div>
         <div><span className="font-medium">Minor:</span> {student?.minor || "-"}</div>
-        <div><span className="font-medium">Major CPI:</span> {student?.major_cpi ?? "-"}</div>
-        <div><span className="font-medium">Minor CPI:</span> {student?.minor_cpi ?? "-"}</div>
+        {student?.programme === "MTech" ? (
+          <div><span className="font-medium">BTech CPI:</span> {student?.btech_cpi ?? "-"}</div>
+        ) : (
+          <>
+            <div><span className="font-medium">Major CPI:</span> {student?.major_cpi ?? "-"}</div>
+            <div><span className="font-medium">Minor CPI:</span> {student?.minor_cpi ?? "-"}</div>
+          </>
+        )}
       </div>
 
       <div className="mt-3 text-sm">

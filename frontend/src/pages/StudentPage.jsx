@@ -255,7 +255,9 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
   const [canEdit, setCanEdit] = useState(typeof initialCanEdit === "boolean" ? initialCanEdit : true);
   const [status, setStatus] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
-  const [cvFile, setCvFile] = useState(null);
+  const [cvTechFile, setCvTechFile] = useState(null);
+  const [cvNonTechFile, setCvNonTechFile] = useState(null);
+  const [cvCoreFile, setCvCoreFile] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [acceptPolicy, setAcceptPolicy] = useState(false);
   const [acceptNoDisciplinary, setAcceptNoDisciplinary] = useState(false);
@@ -424,9 +426,11 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
   const uploadDocuments = async () => {
     if (!canEdit) return;
 
-    if (cvFile) {
+    if (cvTechFile || cvNonTechFile || cvCoreFile) {
       const cvData = new FormData();
-      cvData.append("cv_tech", cvFile);
+      if (cvTechFile) cvData.append("cv_tech", cvTechFile);
+      if (cvNonTechFile) cvData.append("cv_non_tech", cvNonTechFile);
+      if (cvCoreFile) cvData.append("cv_core", cvCoreFile);
       const cvRes = await fetch(`${API_BASE}/student/upload/cv`, {
         method: "POST",
         headers: { Authorization: authHeaders().Authorization },
@@ -786,11 +790,31 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
             <UploadedDocumentsView student={student} />
 
             <label className="flex flex-col gap-1">
-              <span>Upload CV (PDF)</span>
+              <span>Tech CV (PDF)</span>
               <input
                 type="file"
                 accept=".pdf"
-                onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+                onChange={(e) => setCvTechFile(e.target.files?.[0] || null)}
+                disabled={!canEdit}
+                className="rounded border border-slate-300 px-3 py-2 bg-white"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span>Non-Tech CV (PDF)</span>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setCvNonTechFile(e.target.files?.[0] || null)}
+                disabled={!canEdit}
+                className="rounded border border-slate-300 px-3 py-2 bg-white"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span>Core CV (PDF)</span>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setCvCoreFile(e.target.files?.[0] || null)}
                 disabled={!canEdit}
                 className="rounded border border-slate-300 px-3 py-2 bg-white"
               />

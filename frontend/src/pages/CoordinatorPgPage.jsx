@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_BASE, authHeaders, authHeadersFormData, clearSession } from "../utils/auth";
-import { getProgrammeDisplay } from "../utils/pgProgrammes";
+import { getProgrammeDisplay, PG_PROGRAMMES } from "../utils/pgProgrammes";
 
 function toDateTimeLocalValue(date) {
   if (!date) return "";
@@ -215,6 +215,40 @@ export default function CoordinatorPgPage() {
 
   const getPhotoUrl = (filename) => `${API_BASE}/pg-image/${encodeURIComponent(filename)}`;
 
+  const handleDownloadTSV = () => {
+    const headers = ["_id", "email", "name", "roll_number", "profile_photo", "is_registered", "createdAt", "updatedAt", "hostel", "programme_mapping", "img-url"];
+    const rows = students.map((s) => {
+      const imgUrl = s.profile_photo
+        ? `${API_BASE}/pg-image/${encodeURIComponent(s.profile_photo)}`
+        : `${API_BASE}/pg-image/`;
+      const progEntry = s.programme ? PG_PROGRAMMES.find((p) => p._id === String(s.programme)) : null;
+      const mapping = progEntry ? progEntry.displayName : "#N/A";
+      return [
+        s._id || "",
+        s.email || "",
+        s.name || "",
+        s.roll_number || "",
+        s.profile_photo || "",
+        s.is_registered ? "TRUE" : "FALSE",
+        s.createdAt || "",
+        s.updatedAt || "",
+        s.hostel || "",
+        mapping,
+        imgUrl,
+      ].join("\t");
+    });
+    const tsv = [headers.join("\t"), ...rows].join("\n");
+    const blob = new Blob([tsv], { type: "text/tab-separated-values" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pg-students-${new Date().toISOString().slice(0, 10)}.tsv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5">
       {/* Stats */}
@@ -336,6 +370,14 @@ export default function CoordinatorPgPage() {
               className="bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
             >
               {downloadingZip ? "Preparing ZIP..." : `Download All Photos (${stats.withPhoto})`}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadTSV}
+              disabled={students.length === 0}
+              className="bg-slate-700 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+            >
+              Download Data (TSV)
             </button>
           </div>
         </div>

@@ -215,7 +215,8 @@ export default function CoordinatorPgPage() {
 
   const getPhotoUrl = (filename) => `${API_BASE}/pg-image/${encodeURIComponent(filename)}`;
 
-  const handleDownloadTSV = () => {
+  const handleDownloadCSV = () => {
+    const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const headers = ["_id", "email", "name", "roll_number", "profile_photo", "is_registered", "createdAt", "updatedAt", "hostel", "programme_mapping", "img-url"];
     const rows = students.map((s) => {
       const imgUrl = s.profile_photo
@@ -235,14 +236,14 @@ export default function CoordinatorPgPage() {
         s.hostel || "",
         mapping,
         imgUrl,
-      ].join("\t");
+      ].map(escape).join(",");
     });
-    const tsv = [headers.join("\t"), ...rows].join("\n");
-    const blob = new Blob([tsv], { type: "text/tab-separated-values" });
+    const csv = [headers.map(escape).join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `pg-students-${new Date().toISOString().slice(0, 10)}.tsv`;
+    a.download = `pg-students-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -373,11 +374,11 @@ export default function CoordinatorPgPage() {
             </button>
             <button
               type="button"
-              onClick={handleDownloadTSV}
+              onClick={handleDownloadCSV}
               disabled={students.length === 0}
               className="bg-slate-700 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
             >
-              Download Data (TSV)
+              Download Data (CSV)
             </button>
           </div>
         </div>

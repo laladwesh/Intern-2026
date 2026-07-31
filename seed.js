@@ -17,7 +17,6 @@ const seedAdmin = async () => {
       throw new Error("SEED_ADMIN_EMAIL is missing. Set it in your .env file.");
     }
 
-    // Multiple admins are allowed. Skip only if this email already exists.
     const existing = await Admin.findOne({ email: adminEmail });
     if (existing) {
       console.log("Admin already exists:", existing.email);

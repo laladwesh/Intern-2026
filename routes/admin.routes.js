@@ -187,10 +187,11 @@ router.post(
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         try {
-          // major_cpi required for all programmes except MTech
-          if (row.programme !== "MTech" && (row.major_cpi === undefined || row.major_cpi === "")) {
+          // major_cpi required for all programmes except MTech and MDes
+          const noCpiRequired = row.programme === "MTech" || row.programme === "MDes";
+          if (!noCpiRequired && (row.major_cpi === undefined || row.major_cpi === "")) {
             results.failed++;
-            results.errors.push({ row: i + 2, message: "major_cpi is required for non-MTech students" });
+            results.errors.push({ row: i + 2, message: "major_cpi is required for non-MTech/MDes students" });
             continue;
           }
 

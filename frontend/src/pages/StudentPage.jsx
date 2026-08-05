@@ -132,7 +132,7 @@ function ReadOnlyAcademics({ student }) {
         <div><span className="font-medium">Programme:</span> {student?.programme || "-"}</div>
         <div><span className="font-medium">Major:</span> {student?.major || "-"}</div>
         <div><span className="font-medium">Minor:</span> {student?.minor || "-"}</div>
-        {student?.programme === "MTech" ? (
+        {(student?.programme === "MTech" || student?.programme === "MDes") ? (
           <div><span className="font-medium">BTech CPI:</span> {student?.btech_cpi ?? "-"}</div>
         ) : (
           <>
@@ -761,7 +761,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
                   <input className="rounded border border-slate-300 px-3 py-2" type="number" value={form.jee_advanced_rank} onChange={(e) => updateField("jee_advanced_rank", e.target.value)} disabled={!canEdit} />
                 </label>
               </>
-            ) : student?.programme === "MTech" ? (
+            ) : (student?.programme === "MTech" || student?.programme === "MDes") ? (
               <>
                 <label className="flex flex-col gap-1">
                   <span>GATE Score</span>

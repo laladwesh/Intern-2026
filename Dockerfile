@@ -27,7 +27,6 @@ COPY models ./models
 COPY utils ./utils
 COPY routes ./routes
 COPY server.js ./server.js
-COPY seed.js ./seed.js
 RUN mkdir -p ./uploads ./uploads/cvs ./uploads/profile_pics ./uploads/excel ./uploads/pg-images
 
 RUN mkdir -p frontend

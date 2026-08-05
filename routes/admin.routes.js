@@ -187,6 +187,20 @@ router.post(
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         try {
+          // Normalise common programme spelling variants to enum values
+          const PROGRAMME_MAP = {
+            "m.tech": "MTech", "mtech": "MTech",
+            "m.des": "MDes",  "mdes": "MDes",
+            "b.tech": "BTech", "btech": "BTech",
+            "b.des": "BDes",  "bdes": "BDes",
+            "m.sc":  "MSc",   "msc":  "MSc",
+            "m.a":   "MA",    "ma":   "MA",
+            "ph.d":  "PhD",   "phd":  "PhD",
+          };
+          if (row.programme) {
+            row.programme = PROGRAMME_MAP[row.programme.trim().toLowerCase()] || row.programme.trim();
+          }
+
           // major_cpi required for all programmes except MTech and MDes
           const noCpiRequired = row.programme === "MTech" || row.programme === "MDes";
           if (!noCpiRequired && (row.major_cpi === undefined || row.major_cpi === "")) {

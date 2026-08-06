@@ -723,7 +723,7 @@ function BasicInfoForm({ onBack, initialProfile, initialCanEdit, initialSubmitte
               <span>Entrance Exam</span>
               <input
                 className="rounded border border-slate-300 px-3 py-2 bg-slate-50 text-slate-500 cursor-not-allowed"
-                value={student?.programme === "BDes" ? "UCEED" : student?.programme === "BTech" ? "JEE" : "GATE"}
+                value={student?.programme === "BDes" || student?.programme === "MDes" ? "CEED" : student?.programme === "BTech" ? "JEE" : "GATE"}
                 readOnly
                 disabled
               />
